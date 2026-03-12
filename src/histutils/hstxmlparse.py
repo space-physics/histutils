@@ -31,8 +31,7 @@ def xmlparam(fn: Path) -> Dict[str, Any]:
     tree = ET.parse(fn)
 
     root = tree.getroot()
-
-    children = root.getchildren()  # type: ignore[attr-defined]
+    children = list(root)
 
     data = children[1]
 

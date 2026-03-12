@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/30336524.svg)](https://zenodo.org/badge/latestdoi/30336524)
 [![PyPI versions](https://img.shields.io/pypi/pyversions/histutils.svg)](https://pypi.python.org/pypi/histutils)
-[![PyPI Download stats](http://pepy.tech/badge/histutils)](http://pepy.tech/project/histutils)
+[![PyPI Download stats](https://pepy.tech/badge/histutils)](https://pepy.tech/project/histutils)
 
 HiST project raw video data reading utilities.
 

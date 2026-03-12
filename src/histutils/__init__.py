@@ -6,7 +6,7 @@ and we need int64 for large files
 
 from .utils import splitconf, write_quota, sixteen2eight
 from .index import req2frame, getRawInd, meta2rawInd
-from .io import setupimgh5
+from .dio import setupimgh5
 
 __all__ = [
     "splitconf",

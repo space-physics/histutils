@@ -13,7 +13,7 @@ import typing as T
 
 #
 from .utils import write_quota
-from .io import imgwriteincr, setupimgh5
+from .dio import imgwriteincr, setupimgh5
 from .index import getRawInd, meta2rawInd, req2frame
 from .timedmc import frame2ut1, ut12frame
 
