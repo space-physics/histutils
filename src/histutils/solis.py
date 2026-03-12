@@ -7,10 +7,8 @@ try:
     import tifffile
 except ImportError:
     tifffile = None
-try:
-    from astropy.io import fits
-except ImportError:
-    fits = None
+
+from astropy.io import fits
 
 from .rawDMCreader import howbig  # , whichframes
 from .timedmc import frame2ut1
@@ -19,11 +17,9 @@ from .timedmc import frame2ut1
 def getNeoParam(
     fn: Path,
     FrameIndReq=None,
-    ut1req=None,
     kineticsec=None,
     startUTC=None,
-    cmosinit: dict | None = None,
-    verbose=False,
+    cmosinit: dict | None = None
 ):
     """
     assumption is that this is a Neo sCMOS FITS / TIFF file, where Solis chooses to break up the recordings
@@ -38,39 +34,35 @@ def getNeoParam(
 
     nHeadBytes = 0
 
-    if fn.suffix.lower() in ".tiff":
-        if tifffile is None:
-            raise ImportError("tifffile")
-        # FIXME didn't the 2011 TIFFs have headers? maybe not.
-        with tifffile.TiffFile(str(fn)) as f:
-            Y, X = f[0].shape
-            cmosinit = {"firstrawind": 1, "lastrawind": len(f)}
-    elif fn.suffix.lower() in ".fits":
-        if tifffile is None:
-            raise ImportError("astropy")
+    match fn.suffix.lower():
+        case ".tiff":
+            # FIXME didn't the 2011 TIFFs have headers? maybe not.
+            with tifffile.TiffFile(str(fn)) as f:
+                Y, X = f[0].shape
+                cmosinit = {"firstrawind": 1, "lastrawind": len(f)}
+        case ".fits":
+            with fits.open(fn, mode="readonly", memmap=False) as f:
+                kineticsec = f[0].header["KCT"]
+                # TODO start of night's recording (with some Solis versionss)
+                startseries = datetime.fromisoformat(f[0].header["DATE"] + "Z")
 
-        with fits.open(fn, mode="readonly", memmap=False) as f:
-            kineticsec = f[0].header["KCT"]
-            # TODO start of night's recording (with some Solis versionss)
-            startseries = datetime.fromisoformat(f[0].header["DATE"] + "Z")
+                # TODO wish there was a better way
+                try:
+                    frametxt = f[0].header["USERTXT1"]
+                    m = re.search(r"(?<=Images\:)\d+-\d+(?=\.)", frametxt)
+                    inds = m.group(0).split("-")  # type: ignore[union-attr]
+                except (KeyError, AttributeError):
+                    # just a single file?
+                    # yes start with 1, end without adding 1 for Andor Solis
+                    inds = [1, f[0].shape[0]]
 
-            # TODO wish there was a better way
-            try:
-                frametxt = f[0].header["USERTXT1"]
-                m = re.search(r"(?<=Images\:)\d+-\d+(?=\.)", frametxt)
-                inds = m.group(0).split("-")  # type: ignore[union-attr]
-            except (KeyError, AttributeError):
-                # just a single file?
-                # yes start with 1, end without adding 1 for Andor Solis
-                inds = [1, f[0].shape[0]]
+                cmosinit = {"firstrawind": int(inds[0]), "lastrawind": int(inds[1])}
 
-            cmosinit = {"firstrawind": int(inds[0]), "lastrawind": int(inds[1])}
+                # start = datetime.fromisoformat(f[0].header['FRAME']+'Z') No, incorrect by several hours with some 2015 Solis versions!
 
-            # start = datetime.fromisoformat(f[0].header['FRAME']+'Z') No, incorrect by several hours with some 2015 Solis versions!
+                Y, X = f[0].shape[-2:]
 
-            Y, X = f[0].shape[-2:]
-
-        startUTC = startseries.timestamp()
+            startUTC = startseries.timestamp()
 
     # %% FrameInd relative to this file
     finf = {"super_x": X, "super_y": Y}
