@@ -1,11 +1,10 @@
 from pathlib import Path
 import numpy as np
-import typing as T
 import logging
 from struct import pack, unpack
 
 
-def getRawInd(fn: Path, finf: T.Dict[str, int]) -> T.Tuple[int, int]:
+def getRawInd(fn: Path, finf: dict[str, int]) -> tuple[int, int]:
     if not isinstance(finf["nmetadata"], int):
         raise TypeError(finf["nmetadata"])
 
@@ -38,20 +37,20 @@ def getRawInd(fn: Path, finf: T.Dict[str, int]) -> T.Tuple[int, int]:
     return firstRawIndex, lastRawIndex
 
 
-def meta2rawInd(f: T.io.BinaryIO, Nmetadata: int) -> int:
+def meta2rawInd(f, Nmetadata: int) -> int:
 
     if Nmetadata < 1:
-        rawind = None  # undefined
+        rawind = -1
     else:
         # FIXME works for .DMCdata version 1 only
         metad = np.fromfile(f, dtype=np.uint16, count=Nmetadata)
-        metad = pack("<2H", metad[1], metad[0])  # reorder 2 uint16
-        rawind = unpack("<I", metad)[0]  # always a tuple
+        m = pack("<2H", metad[1], metad[0])  # reorder 2 uint16
+        rawind = unpack("<I", m)[0]  # always a tuple
 
     return rawind
 
 
-def req2frame(req: T.Sequence[int], N: int = 0) -> np.ndarray:
+def req2frame(req: list[int] | None, N: int = 0):
     """
     output has to be numpy.arange for > comparison
     """

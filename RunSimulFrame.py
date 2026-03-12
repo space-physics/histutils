@@ -34,7 +34,7 @@ RunSimulFrame.py   ~/data/2013-04-14/hst/2013-04-14T0824_hst1.h5 --cmin 1090 --c
    -t 2013-04-14T08:25:45Z 2013-04-14T08:26:30Z
 
 """
-from dateutil.parser import parse
+
 from os import devnull
 from datetime import datetime
 from pathlib import Path
@@ -112,8 +112,8 @@ def getmulticam(flist, tstartstop, framereq, cpar, odir, cals, cmdlog=""):
 class Sim:
     def __init__(self, dpath, fn0, tstartstop, framereq):
         if isinstance(tstartstop[0], str):
-            self.startutc = parse(tstartstop[0])
-            self.stoputc = parse(tstartstop[1])
+            self.startutc = datetime.fromisoformat(tstartstop[0])
+            self.stoputc = datetime.fromisoformat(tstartstop[1])
         else:  # whole file
             try:
                 if fn0.suffix == ".h5":
@@ -152,11 +152,19 @@ if __name__ == "__main__":
         default=[None],
     )
     p.add_argument(
-        "-f", "--frames", help="start stop step frame indices to play", nargs="+", type=int,
+        "-f",
+        "--frames",
+        help="start stop step frame indices to play",
+        nargs="+",
+        type=int,
     )
     p.add_argument("-o", "--outdir", help="output directory", default=".")
     p.add_argument(
-        "-c", "--clist", help="list of calibration file for each camera", nargs="+", default=[],
+        "-c",
+        "--clist",
+        help="list of calibration file for each camera",
+        nargs="+",
+        default=[],
     )
     p.add_argument(
         "-s",
@@ -166,15 +174,30 @@ if __name__ == "__main__":
         nargs="+",
     )
     p.add_argument(
-        "-m", "--mag", help="inclination, declination", nargs=2, type=float, default=(None, None),
+        "-m",
+        "--mag",
+        help="inclination, declination",
+        nargs=2,
+        type=float,
+        default=(None, None),
     )
     p.add_argument(
-        "--cmin", help="min data values per camera", nargs="+", type=int, default=(100, 100),
+        "--cmin",
+        help="min data values per camera",
+        nargs="+",
+        type=int,
+        default=(100, 100),
     )
     p.add_argument(
-        "--cmax", help="max data values per camera", nargs="+", type=int, default=(1200, 1200),
+        "--cmax",
+        help="max data values per camera",
+        nargs="+",
+        type=int,
+        default=(1200, 1200),
     )
-    p.add_argument("--png", help="write large numbers of PNGs instead of AVI", action="store_true")
+    p.add_argument(
+        "--png", help="write large numbers of PNGs instead of AVI", action="store_true"
+    )
     P = p.parse_args()
 
     cpar = {
@@ -191,4 +214,6 @@ if __name__ == "__main__":
         "png": P.png,
     }
 
-    getmulticam(P.flist, P.tstartstop, P.frames, cpar, P.outdir, P.clist, " ".join(argv))
+    getmulticam(
+        P.flist, P.tstartstop, P.frames, cpar, P.outdir, P.clist, " ".join(argv)
+    )

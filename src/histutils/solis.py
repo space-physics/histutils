@@ -1,5 +1,5 @@
 from pathlib import Path
-from dateutil.parser import parse
+from datetime import datetime
 import re
 import numpy as np
 
@@ -22,7 +22,7 @@ def getNeoParam(
     ut1req=None,
     kineticsec=None,
     startUTC=None,
-    cmosinit: dict = None,
+    cmosinit: dict | None = None,
     verbose=False,
 ):
     """
@@ -50,23 +50,23 @@ def getNeoParam(
             raise ImportError("astropy")
 
         with fits.open(fn, mode="readonly", memmap=False) as f:
-
             kineticsec = f[0].header["KCT"]
             # TODO start of night's recording (with some Solis versionss)
-            startseries = parse(f[0].header["DATE"] + "Z")
+            startseries = datetime.fromisoformat(f[0].header["DATE"] + "Z")
 
             # TODO wish there was a better way
             try:
                 frametxt = f[0].header["USERTXT1"]
                 m = re.search(r"(?<=Images\:)\d+-\d+(?=\.)", frametxt)
-                inds = m.group(0).split("-")
-            except KeyError:  # just a single file?
+                inds = m.group(0).split("-")  # type: ignore[union-attr]
+            except (KeyError, AttributeError):
+                # just a single file?
                 # yes start with 1, end without adding 1 for Andor Solis
                 inds = [1, f[0].shape[0]]
 
             cmosinit = {"firstrawind": int(inds[0]), "lastrawind": int(inds[1])}
 
-            # start = parse(f[0].header['FRAME']+'Z') No, incorrect by several hours with some 2015 Solis versions!
+            # start = datetime.fromisoformat(f[0].header['FRAME']+'Z') No, incorrect by several hours with some 2015 Solis versions!
 
             Y, X = f[0].shape[-2:]
 
@@ -84,7 +84,9 @@ def getNeoParam(
     #                           BytesPerImage, BytesPerFrame, verbose)
     FrameIndRel = None
 
-    assert isinstance(FrameIndReq, int) or FrameIndReq is None, "TODO: add multi-frame request case"
+    assert isinstance(FrameIndReq, int) or FrameIndReq is None, (
+        "TODO: add multi-frame request case"
+    )
     rawFrameInd = np.arange(
         cmosinit["firstrawind"], cmosinit["lastrawind"] + 1, FrameIndReq, dtype=np.int64
     )

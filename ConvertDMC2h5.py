@@ -16,13 +16,14 @@ HiST simple conversion of entire night (without metadata, which can be appended 
 
     python ConvertDMC2h5.py ~/data/2014-04-24 -o ~/work/2014-04-24
 """
+
 from pathlib import Path
 from sys import argv
 from numpy import int64
 import logging
 
 #
-from histutils.io import dir2fn, vid2h5
+from histutils.dio import dir2fn, vid2h5
 from histutils.rawDMCreader import goRead
 from histutils.plots import doPlayMovie, doplotsave
 
@@ -58,10 +59,12 @@ def dmclooper(p):
     for i, fn in enumerate(flist):
         params["outfn"] = dir2fn(p.outdir, fn, ".h5")
         if params["outfn"].is_file():
-            logging.warning(f'\nskipping {params["outfn"]} {fn}')
+            logging.warning(f"\nskipping {params['outfn']} {fn}")
             continue
 
-        logging.info(f"\n file {i+1} / {N}   {i+1 / N * 100.:.1f} % done with {flist[0].parent}")
+        logging.info(
+            f"\n file {i + 1} / {N}   {i + 1 / N * 100.0:.1f} % done with {flist[0].parent}"
+        )
 
         rawImgData, rawind, finf = goRead(fn, params)
         # %% convert
@@ -117,8 +120,12 @@ if __name__ == "__main__":
         nargs=2,
         type=float,
     )
-    p.add_argument("-k", "--kineticsec", help="kinetic rate of camera (sec)  = 1/fps", type=float)
-    p.add_argument("--rotccw", help="rotate CCW value in 90 deg. steps", type=int, default=0)
+    p.add_argument(
+        "-k", "--kineticsec", help="kinetic rate of camera (sec)  = 1/fps", type=float
+    )
+    p.add_argument(
+        "--rotccw", help="rotate CCW value in 90 deg. steps", type=int, default=0
+    )
     p.add_argument("--transpose", help="transpose image", action="store_true")
     p.add_argument("--flipud", help="vertical flip", action="store_true")
     p.add_argument("--fliplr", help="horizontal flip", action="store_true")
@@ -135,17 +142,24 @@ if __name__ == "__main__":
         help="return the average of the requested frames, as a single image",
         action="store_true",
     )
-    p.add_argument("--hist", help="makes a histogram of all data frames", action="store_true")
+    p.add_argument(
+        "--hist", help="makes a histogram of all data frames", action="store_true"
+    )
     p.add_argument("-v", "--verbose", help="debugging", action="store_true")
     p.add_argument("--fire", help="fire filename")
     p.add_argument("-l", "--loc", help="lat lon alt_m of sensor", type=float, nargs=3)
     p.add_argument(
-        "--headerbytes", help="number of header bytes: 2013-2016: 4  2011: 0", type=int, default=4,
+        "--headerbytes",
+        help="number of header bytes: 2013-2016: 4  2011: 0",
+        type=int,
+        default=4,
     )
     P = p.parse_args()
 
     logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S", level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        datefmt="%H:%M:%S",
+        level=logging.INFO,
     )
 
     dmclooper(P)

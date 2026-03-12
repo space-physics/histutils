@@ -1,5 +1,39 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "histutils"
+description = "Utilities for reading HiST data, etc."
+requires-python = ">=3.10"
+keywords = ["aurora"]
+classifiers = [
+	"Intended Audience :: Science/Research",
+	"Development Status :: 4 - Beta",
+	"Topic :: Scientific/Engineering :: Atmospheric Science",
+	"Programming Language :: Python :: 3",
+	"Topic :: Utilities"
+]
+dependencies = [
+	"numpy",
+	"h5py"
+]
+dynamic = ["readme", "version"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+version = {attr = "histutils.__version__"}
+
+[project.optional-dependencies]
+tests = ["pytest", "mypy"]
+io = ["dascutils", "themisasi", "astropy"]
+plot = ["tifffile", "matplotlib", "scipy", "pymap3d"]
 
 [tool.black]
 line-length = 100
+
+[tool.mypy]
+files = ["."]
+install_types = true
+exclude = ["^build([/\\\\]|$)"]
+ignore_missing_imports = true

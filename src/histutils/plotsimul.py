@@ -24,7 +24,7 @@ from themisasi.plots import overlayrowcol
 DPI = 100
 
 
-def plotPlainImg(sim, cam, rawdata, t, odir):
+def plotPlainImg(cam, rawdata, t, odir):
     """
     No subplots, just a plan
 
@@ -35,7 +35,11 @@ def plotPlainImg(sim, cam, rawdata, t, odir):
         ax = fg.gca()
         ax.set_axis_off()  # no ticks
         ax.imshow(
-            R[t, :, :], origin="lower", vmin=max(C.clim[0], 1), vmax=C.clim[1], cmap="gray",
+            R[t, :, :],
+            origin="lower",
+            vmin=max(C.clim[0], 1),
+            vmax=C.clim[1],
+            cmap="gray",
         )
         ax.text(
             0.05,
@@ -55,7 +59,7 @@ def plotPlainImg(sim, cam, rawdata, t, odir):
 # %%
 
 
-def plotRealImg(sim, cam, rawdata, t: int, odir: Path = None, fg=None):
+def plotRealImg(sim, cam, rawdata, t: int, odir: Path | None = None, fg=None):
     """
     sim: histfeas/simclass.py
     cam: camclass.py
@@ -99,7 +103,9 @@ def plotRealImg(sim, cam, rawdata, t: int, odir: Path = None, fg=None):
             dasc = dio.load(C.fn, treq=T[sim.useCamBool][0])
             C.tKeo = dasc.time
 
-            updateframe(0, dasc.values, dasc.wavelength, C, axs[i], fg)  # FIXME may need API update
+            updateframe(
+                0, dasc.values, dasc.wavelength, C, axs[i], fg
+            )  # FIXME may need API update
             try:
                 overlayrowcol(axs[i], C.hlrows, C.hlcols)
             except AttributeError:
@@ -117,7 +123,9 @@ def plotRealImg(sim, cam, rawdata, t: int, odir: Path = None, fg=None):
             # fg.subplots_adjust(top=0.95)
 
     # TODO: T[0] is fastest cam now, but needs generalization
-    writeplots(fg, "rawFrame", T[0], odir=odir, dpi=sim.dpi, facecolor="k", doclose=doclose)
+    writeplots(
+        fg, "rawFrame", T[0], odir=odir, dpi=sim.dpi, facecolor="k", doclose=doclose
+    )
 
 
 def updateframe(t, raw, wavelen, cam, ax, fg):
@@ -235,5 +243,5 @@ def updateframe(t, raw, wavelen, cam, ax, fg):
     except AttributeError:  # asi
         pass
     # %% plot cleanup
-    ax.grid(False)  # in case Seaborn is used
+    ax.grid(False)
     return dtframe

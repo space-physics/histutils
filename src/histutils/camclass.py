@@ -2,7 +2,6 @@ from pathlib import Path
 import logging
 import numpy as np
 from numpy.testing import assert_allclose
-from dateutil.parser import parse
 from datetime import datetime
 from scipy.signal import savgol_filter
 from numpy.random import poisson
@@ -32,8 +31,8 @@ class Cam:  # use this like an advanced version of Matlab struct
         name: str,
         zmax=None,
         xreq=None,
-        makeplot: T.List[str] = None,
-        calfn: Path = None,
+        makeplot: T.List[str] | None = None,
+        calfn: Path | None = None,
         verbose: int = 0,
     ) -> None:
 
@@ -73,11 +72,15 @@ class Cam:  # use this like an advanced version of Matlab struct
                 self.clim[1] = splitconf(cp, "plotMaxVal", ci)
             # %% store az,el calibration data
             if self.name.startswith("dasc"):
-                dasc = dio.loadcal(cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci])
+                dasc = dio.loadcal(
+                    cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci]
+                )
             elif self.name.startswith("themis"):
                 themis = themisasi.loadcal(cp["azcalfn"].split(",")[ci])
             else:
-                raise ValueError(f"I do not know how to load az/el data for {self.name}")
+                raise ValueError(
+                    f"I do not know how to load az/el data for {self.name}"
+                )
 
             if "realvid" in makeplot:
                 if "h5" in makeplot and sim.fovfn:
@@ -103,7 +106,7 @@ class Cam:  # use this like an advanced version of Matlab struct
 
         self.Bincl = splitconf(cp, "Bincl", ci)
         self.Bdecl = splitconf(cp, "Bdecl", ci)
-        self.Bepoch = splitconf(cp, "Bepoch", ci, parse)
+        self.Bepoch = splitconf(cp, "Bepoch", ci)
 
         try:
             self.Baz = 180.0 + self.Bdecl
@@ -117,7 +120,9 @@ class Cam:  # use this like an advanced version of Matlab struct
         self.clim[0] = splitconf(cp, "plotMinVal", ci)
         self.clim[1] = splitconf(cp, "plotMaxVal", ci)
 
-        self.intensityScaleFactor = splitconf(cp, "intensityScaleFactor", ci, fallback=1.0)
+        self.intensityScaleFactor = splitconf(
+            cp, "intensityScaleFactor", ci, fallback=1.0
+        )
         self.lowerthres = splitconf(cp, "lowerthres", ci)
         # %% check FOV and 1D cut sizes for sanity
         self.fovmaxlen = splitconf(cp, "FOVmaxLengthKM", ci, fallback=np.nan)
@@ -171,11 +176,13 @@ class Cam:  # use this like an advanced version of Matlab struct
         if sim.realdata and self.usecam and isinstance(self.name, str):
             if isinstance(cp["fn"], str):
                 # .strip() needed in case of multi-line ini
-                self.fn = (sim.realdatapath / cp["fn"].split(",")[ci].strip()).expanduser()
+                self.fn = (
+                    sim.realdatapath / cp["fn"].split(",")[ci].strip()
+                ).expanduser()
             elif isinstance(cp["fn"], Path):
                 self.fn = sim.realdatapath / cp["fn"]
             else:
-                raise ValueError(f'your camera filename {cp["fn"]} not found')
+                raise ValueError(f"your camera filename {cp['fn']} not found")
             # %% metadata
             self.lat: float
             self.lon: float
@@ -195,7 +202,6 @@ class Cam:  # use this like an advanced version of Matlab struct
                 self.ut1unix = datetime2unix(data.time.values.astype(datetime))
             # legacy data including HiST  (should use xarray to convert instead)
             elif self.fn.suffix == ".h5":
-
                 assert self.fn.is_file(), f"{self.fn} does not exist"
                 """timing, parameter wrangling  FIXME someday use xarray.Dataset. convert/save data with xarray instead of h5py"""
                 with h5py.File(self.fn, "r") as f:
@@ -220,7 +226,9 @@ class Cam:  # use this like an advanced version of Matlab struct
                     self.lon = c["lon"].item()
                     self.alt_m = c["alt_m"].item()
             else:
-                raise OSError(f"I am not sure how to work with the data for {self.name}")
+                raise OSError(
+                    f"I am not sure how to work with the data for {self.name}"
+                )
 
         elif not sim.realdata:  # sim ONLY
             self.kineticsec = splitconf(cp, "kineticsec", ci)  # simulation
@@ -254,7 +262,9 @@ class Cam:  # use this like an advanced version of Matlab struct
         """
         try:
             if self.pedn is not None:
-                self.dn2intens = self.pedn / (self.kineticsec * self.pixarea_sqcm * self.ampgain)
+                self.dn2intens = self.pedn / (
+                    self.kineticsec * self.pixarea_sqcm * self.ampgain
+                )
                 if sim.realdata:
                     self.intens2dn = 1.0
                 else:
@@ -293,10 +303,12 @@ class Cam:  # use this like an advanced version of Matlab struct
         # ModelRaySpacingDeg = np.mean( np.diff(pixAngleDeg[:,iCam],n=1) ) # for reference purposes
 
     def toecef(self, ranges):
-        assert isinstance(
-            self.Baz, float
-        ), "please specify [cam]Bincl, [cam]Bdecl for each camera in .ini file"
-        assert isinstance(self.lat, float), "please specify [cam]latitude, [cam]longitude"
+        assert isinstance(self.Baz, float), (
+            "please specify [cam]Bincl, [cam]Bdecl for each camera in .ini file"
+        )
+        assert isinstance(self.lat, float), (
+            "please specify [cam]latitude, [cam]longitude"
+        )
         self.x2mz, self.y2mz, self.z2mz = aer2ecef(
             self.Baz, self.Bel, ranges, self.lat, self.lon, self.alt_m
         )
@@ -341,10 +353,10 @@ class Cam:  # use this like an advanced version of Matlab struct
         NOTE: we need to retrieve values in case no modifications are done.
         (since we'd get a closed h5py handle)
         """
-        assert (
-            self.cal1Dfn.is_file()
-        ), "please specify filename for each camera under [cam]/cal1Dname: in .ini file  {}".format(
-            self.cal1Dfn
+        assert self.cal1Dfn.is_file(), (
+            "please specify filename for each camera under [cam]/cal1Dname: in .ini file  {}".format(
+                self.cal1Dfn
+            )
         )
 
         with h5py.File(self.cal1Dfn, "r") as f:
@@ -363,13 +375,17 @@ class Cam:  # use this like an advanced version of Matlab struct
             ra = ra.T
             dec = dec.T
         if self.fliplr:
-            logging.debug("flipping horizontally cam #{} az/el/ra/dec data.".format(self.name))
+            logging.debug(
+                "flipping horizontally cam #{} az/el/ra/dec data.".format(self.name)
+            )
             az = np.fliplr(az)
             el = np.fliplr(el)
             ra = np.fliplr(ra)
             dec = np.fliplr(dec)
         if self.flipud:
-            logging.debug("flipping vertically cam #{} az/el/ra/dec data.".format(self.name))
+            logging.debug(
+                "flipping vertically cam #{} az/el/ra/dec data.".format(self.name)
+            )
             az = np.flipud(az)
             el = np.flipud(el)
             ra = np.flipud(ra)
@@ -392,7 +408,11 @@ class Cam:  # use this like an advanced version of Matlab struct
             and self.debiasData is not None
             and np.isfinite(self.debiasData)
         ):
-            logging.debug("Debiasing Data for Camera #{} by -{}".format(self.name, self.debiasData))
+            logging.debug(
+                "Debiasing Data for Camera #{} by -{}".format(
+                    self.name, self.debiasData
+                )
+            )
             data -= self.debiasData
         return data
 
@@ -410,7 +430,9 @@ class Cam:  # use this like an advanced version of Matlab struct
             self.dnoise = dnoise  # diagnostic
 
         if self.ccdbias:
-            logging.info("adding bias {:.1f} to camera #{}".format(self.ccdbias, self.name))
+            logging.info(
+                "adding bias {:.1f} to camera #{}".format(self.ccdbias, self.name)
+            )
             noisy += self.ccdbias
 
         # %% diagnostic quantities
@@ -420,7 +442,9 @@ class Cam:  # use this like an advanced version of Matlab struct
         return noisy
 
     def dosmooth(self, data):
-        assert np.isfinite(data).all(), "NaN leaked into brightness data, savgol cannot handle NaN"
+        assert np.isfinite(data).all(), (
+            "NaN leaked into brightness data, savgol cannot handle NaN"
+        )
         try:
             if self.smoothspan > 0 and self.savgolOrder > 0:
                 logging.debug("Smoothing Data for Camera #{}".format(self.name))
@@ -434,7 +458,9 @@ class Cam:  # use this like an advanced version of Matlab struct
         mask = data < 0
         if mask.sum() > 0.2 * self.ncutpix:
             logging.info(
-                "Setting {} negative Data values to 0 for Camera #{}".format(mask.sum(), self.name)
+                "Setting {} negative Data values to 0 for Camera #{}".format(
+                    mask.sum(), self.name
+                )
             )
 
         data[mask] = 0
@@ -476,9 +502,9 @@ class Cam:  # use this like an advanced version of Matlab struct
         cutcol = np.arange(self.superx, dtype=int)
         # %% rows (y) to cut from picture
         cutrow = np.rint(np.polyval(polycoeff, cutcol)).astype(int)
-        assert (cutrow >= 0).all() and (
-            cutrow < self.supery
-        ).all(), "impossible least squares fit for 1-D cut\n is your video orientation correct? check the params of video hdf5 file"
+        assert (cutrow >= 0).all() and (cutrow < self.supery).all(), (
+            "impossible least squares fit for 1-D cut\n is your video orientation correct? check the params of video hdf5 file"
+        )
         # DONT DO THIS: cutrow.clip(0,self.supery,cutrow)
         # %% angle from magnetic zenith corresponding to those pixels
         radecMagzen = azel2radec(self.Baz, self.Bel, self.lat, self.lon, self.Bepoch)
@@ -486,7 +512,10 @@ class Cam:  # use this like an advanced version of Matlab struct
         logging.info("mag. zen. ra,dec {}".format(radecMagzen))
 
         anglesep_deg = anglesep(
-            radecMagzen[0], radecMagzen[1], self.ra[cutrow, cutcol], self.dec[cutrow, cutcol],
+            radecMagzen[0],
+            radecMagzen[1],
+            self.ra[cutrow, cutcol],
+            self.dec[cutrow, cutcol],
         )
 
         # %% assemble angular distances
@@ -500,9 +529,10 @@ class Cam:  # use this like an advanced version of Matlab struct
             diffang = np.diff(self.angle_deg)
             # diffoutlier = max(abs(expect_diffang-diffang.min()),
             #                   abs(expect_diffang-diffang.max()))
-            assert_allclose(
-                expect_diffang, diffang.mean(), rtol=0.01
-            ), "large bias in camera angle vector detected"
+            (
+                assert_allclose(expect_diffang, diffang.mean(), rtol=0.01),
+                "large bias in camera angle vector detected",
+            )
         #            assert diffoutlier < expect_diffang,'large jump in camera angle vector detected' #TODO arbitrary
 
         if self.verbose:
@@ -553,7 +583,8 @@ class Cam:  # use this like an advanced version of Matlab struct
 
         # %% dicard edge pixels
         mask = np.logical_not(
-            ((C == 0) | (C == self.az.shape[1] - 1)) | ((R == 0) | (R == self.az.shape[0] - 1))
+            ((C == 0) | (C == self.az.shape[1] - 1))
+            | ((R == 0) | (R == self.az.shape[0] - 1))
         )
 
         R = R[mask]

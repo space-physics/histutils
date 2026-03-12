@@ -28,7 +28,12 @@ def doPlayMovie(data, playMovie, ut1_unix=None, rawFrameInd=None, clim=None):
 
     try:
         hIm = hAx.imshow(
-            data[0, ...], vmin=clim[0], vmax=clim[1], cmap="gray", origin="lower", norm=LogNorm(),
+            data[0, ...],
+            vmin=clim[0],
+            vmax=clim[1],
+            cmap="gray",
+            origin="lower",
+            norm=LogNorm(),
         )
     except TypeError:  # clim wasn't specified properly
         print("setting image viewing limits based on first frame")
@@ -97,7 +102,12 @@ def doplotsave(bigfn, data, rawind, clim, dohist, meanImg):
         ax = fg.gca()
         if clim:
             hi = ax.imshow(
-                meanStack, cmap="gray", origin="lower", vmin=clim[0], vmax=clim[1], norm=LogNorm(),
+                meanStack,
+                cmap="gray",
+                origin="lower",
+                vmin=clim[0],
+                vmax=clim[1],
+                norm=LogNorm(),
             )
         else:
             hi = ax.imshow(meanStack, cmap="gray", origin="lower", norm=LogNorm())
@@ -204,7 +214,9 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
     fg = figure()
     ax = fg.gca()
     # NOTE do NOT use twinax() here, leads to incorrect conclusion based on different axes limits
-    ax.plot(nC, nR, label="cam{} data".format(name), color="r", linestyle="none", marker=".")
+    ax.plot(
+        nC, nR, label="cam{} data".format(name), color="r", linestyle="none", marker="."
+    )
     ax.plot(C, R, label="cam{} fit".format(name), linestyle="-")
 
     ax.legend()

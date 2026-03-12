@@ -1,12 +1,12 @@
 from pathlib import Path
 import numpy as np
 import h5py
-from typing import Union, Dict, Any
+from typing import Any
 from datetime import datetime
 import logging
 
 
-def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path:
+def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path | None:
     """
 
     Parameters
@@ -42,13 +42,15 @@ def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path:
     try:
         if ofn.samefile(ifn):
             raise FileExistsError(f"do not overwrite input file! {ifn}")
-    except FileNotFoundError:  # a good thing, the output file doesn't exist and hence it's not the input file
+    except (
+        FileNotFoundError
+    ):  # a good thing, the output file doesn't exist and hence it's not the input file
         pass
 
     return ofn
 
 
-def imgwriteincr(fn: Path, imgs: np.ndarray, imgslice: Union[int, slice]):
+def imgwriteincr(fn: Path, imgs, imgslice: int | slice):
     """
     writes HDF5 huge image files in increments
 
@@ -71,23 +73,23 @@ def imgwriteincr(fn: Path, imgs: np.ndarray, imgslice: Union[int, slice]):
         with h5py.File(fn, "r+") as f:
             f["/rawimg"][imgslice, :, :] = imgs
     elif isinstance(fn, h5py.File):
-        f["/rawimg"][imgslice, :, :] = imgs
+        fn["/rawimg"][imgslice, :, :] = imgs
     else:
         raise TypeError(f"{fn} must be Path or h5py.File instead of {type(fn)}")
 
 
 def vid2h5(
-    data: np.ndarray,
+    data,
     *,
     ut1,
     rawind,
     ticks,
-    params: Dict[str, Any],
+    params: dict[str, Any],
     i: int = 0,
     Nfile: int = 1,
     det=None,
     tstart=None,
-    cmdlog: str = None,
+    cmdlog: str | None = None,
 ):
 
     if not params.get("outfn"):
@@ -98,9 +100,9 @@ def vid2h5(
         raise IsADirectoryError(outfn)
     outfn.parent.mkdir(exist_ok=True)
 
-    txtupd = f"convert file {i+1} / {Nfile}"
+    txtupd = f"convert file {i + 1} / {Nfile}"
     if params.get("spoolfn"):
-        txtupd += f' {params["spoolfn"].name}'
+        txtupd += f" {params['spoolfn'].name}"
     txtupd += f" => {outfn}"
     """
     note if line wraps (>80 characters), this in-place update breaks.
@@ -145,7 +147,9 @@ def vid2h5(
                 f"to {datetime.utcfromtimestamp(ut1[-1])}"
             )
             if "ut1_unix" not in f:
-                fut1 = f.create_dataset("/ut1_unix", shape=(N,), dtype=float, fletcher32=True)
+                fut1 = f.create_dataset(
+                    "/ut1_unix", shape=(N,), dtype=float, fletcher32=True
+                )
                 fut1.attrs["units"] = "seconds since Unix epoch Jan 1 1970 midnight"
 
             f["/ut1_unix"][ind] = ut1
@@ -155,8 +159,12 @@ def vid2h5(
 
         if rawind is not None:
             if "rawind" not in f:
-                fri = f.create_dataset("/rawind", shape=(N,), dtype=np.int64, fletcher32=True)
-                fri.attrs["units"] = "one-based index since camera program started this session"
+                fri = f.create_dataset(
+                    "/rawind", shape=(N,), dtype=np.int64, fletcher32=True
+                )
+                fri.attrs["units"] = (
+                    "one-based index since camera program started this session"
+                )
 
             f["/rawind"][ind] = rawind
 
@@ -172,7 +180,9 @@ def vid2h5(
         if params.get("spoolfn"):
             # http://docs.h5py.org/en/latest/strings.html
             if "spoolfn" not in f:
-                fsp = f.create_dataset("/spoolfn", shape=(N,), dtype=h5py.special_dtype(vlen=bytes))
+                fsp = f.create_dataset(
+                    "/spoolfn", shape=(N,), dtype=h5py.special_dtype(vlen=bytes)
+                )
                 fsp.attrs["description"] = "input filename data was extracted from"
 
             f["/spoolfn"][ind] = params["spoolfn"].name
@@ -211,7 +221,8 @@ def vid2h5(
             loc = params["sensorloc"]
             try:
                 lparam = np.array(
-                    (loc[0], loc[1], loc[2]), dtype=[("lat", "f8"), ("lon", "f8"), ("alt_m", "f8")],
+                    (loc[0], loc[1], loc[2]),
+                    dtype=[("lat", "f8"), ("lon", "f8"), ("alt_m", "f8")],
                 )
 
                 # cannot use fletcher32 here, typeerror
@@ -234,13 +245,13 @@ def vid2h5(
 
 
 def setupimgh5(
-    f: Union[Path, h5py.File],
-    params: Dict[str, int],
+    f: Path | h5py.File,
+    params: dict[str, int],
     *,
     dtype=np.uint16,
     writemode: str = "r+",
     key: str = "/rawimg",
-    cmdlog: str = None,
+    cmdlog: str | None = None,
 ):
     """
     Configures an HDF5 file for storing image stacks, enabling video player in
@@ -277,13 +288,15 @@ def setupimgh5(
             fletcher32=True,
             track_times=True,
         )
-        h.attrs["CLASS"] = np.string_("IMAGE")
-        h.attrs["IMAGE_VERSION"] = np.string_("1.2")
-        h.attrs["IMAGE_SUBCLASS"] = np.string_("IMAGE_GRAYSCALE")
-        h.attrs["DISPLAY_ORIGIN"] = np.string_("LL")
+        h.attrs["CLASS"] = np.bytes_("IMAGE")
+        h.attrs["IMAGE_VERSION"] = np.bytes_("1.2")
+        h.attrs["IMAGE_SUBCLASS"] = np.bytes_("IMAGE_GRAYSCALE")
+        h.attrs["DISPLAY_ORIGIN"] = np.bytes_("LL")
         h.attrs["IMAGE_WHITE_IS_ZERO"] = np.uint8(0)
 
         if cmdlog and isinstance(cmdlog, str):
             f["/cmdlog"] = cmdlog
     else:
-        raise TypeError(f"{type(f)} is not correct, must be filename or h5py.File HDF5 file handle")
+        raise TypeError(
+            f"{type(f)} is not correct, must be filename or h5py.File HDF5 file handle"
+        )

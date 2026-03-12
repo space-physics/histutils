@@ -1,9 +1,8 @@
 # HiST Utils
 
 [![DOI](https://zenodo.org/badge/30336524.svg)](https://zenodo.org/badge/latestdoi/30336524)
-[![Build Status](https://travis-ci.com/space-physics/histutils.svg?branch=master)](https://travis-ci.com/space-physics/histutils)
-[![pypi versions](https://img.shields.io/pypi/pyversions/histutils.svg)](https://pypi.python.org/pypi/histutils)
-[![PyPi Download stats](http://pepy.tech/badge/histutils)](http://pepy.tech/project/histutils)
+[![PyPI versions](https://img.shields.io/pypi/pyversions/histutils.svg)](https://pypi.python.org/pypi/histutils)
+[![PyPI Download stats](http://pepy.tech/badge/histutils)](http://pepy.tech/project/histutils)
 
 HiST project raw video data reading utilities.
 

@@ -2,16 +2,16 @@
 """
 Plays video contained in HDF5 file, especially from rawDMCreader program.
 """
+
 from pathlib import Path
 import h5py
 import numpy as np
-from typing import Tuple
 
 from histutils.utils import sixteen2eight
 from histutils.plots import doPlayMovie
 
 
-def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: Tuple[int, int]):
+def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: tuple[int, int]):
     h5fn = Path(h5fn).expanduser()
 
     with h5py.File(h5fn, "r") as f:
@@ -27,7 +27,7 @@ def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: Tuple[int, int]):
             doPlayMovie(data, 0.1, ut1_unix=ut1_unix, clim=clim)
 
 
-def hdf2video(data: np.ndarray, outfn: Path, clim: Tuple[int, int]):
+def hdf2video(data, outfn: Path, clim: tuple[int, int]):
     outfn = Path(outfn).expanduser()
 
     import cv2
@@ -70,7 +70,9 @@ if __name__ == "__main__":
         help="path / variable inside hdf5 file to image stack (default=rawimg)",
         default="rawimg",
     )
-    p.add_argument("-o", "--output", help="output new video file instead of playing back")
+    p.add_argument(
+        "-o", "--output", help="output new video file instead of playing back"
+    )
     p.add_argument(
         "-c",
         "--clim",

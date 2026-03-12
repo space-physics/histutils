@@ -2,6 +2,7 @@
 """
 retrieve parameters from HiST .DMCdata experiment .xml files
 """
+
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Any
@@ -27,11 +28,11 @@ def xmlparam(fn: Path) -> Dict[str, Any]:
     params : dict
         camera parameters of interest
     """
-    tree = ET.parse(fn)  # type: ignore
+    tree = ET.parse(fn)
 
     root = tree.getroot()
 
-    children = root.getchildren()
+    children = root.getchildren()  # type: ignore[attr-defined]
 
     data = children[1]
 

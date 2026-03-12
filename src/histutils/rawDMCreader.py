@@ -5,11 +5,11 @@ reads .DMCdata files and displays them
 NOTE: Observe the dtype=np.int64, this is for Windows Python, that wants to
    default to int32 instead of int64 like everyone else!
 """
+
 from pathlib import Path
 import logging
 import numpy as np
 import typing as T
-import typing.io as Tio
 
 #
 from .utils import write_quota
@@ -23,8 +23,8 @@ BPP = 16  # bits per pixel
 
 
 def goRead(
-    infn: Path, params: T.Dict[str, T.Any]
-) -> T.Tuple[np.ndarray, np.ndarray, T.Dict[str, T.Any]]:
+    infn: Path, params: dict[str, T.Any]
+) -> tuple:
 
     infn = Path(infn).expanduser()
     # %% setup data parameters
@@ -36,10 +36,12 @@ def goRead(
     # %% output (variable or file)
     if params.get("outfn"):
         setupimgh5(params["outfn"], finf)
-        data = None
+        data = np.ndarray([])
     else:
         data = np.zeros(
-            (finf["nframeextract"], finf["super_y"], finf["super_x"]), dtype=np.uint16, order="C",
+            (finf["nframeextract"], finf["super_y"], finf["super_x"]),
+            dtype=np.uint16,
+            order="C",
         )
     # %% read
     with infn.open("rb") as fid:
@@ -51,12 +53,14 @@ def goRead(
             else:
                 data[j, ...] = D
     # %% absolute time estimate, software timing (at your peril)
-    finf["ut1"] = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawFrameInd)
+    finf["ut1"] = frame2ut1(
+        params.get("startUTC"), params.get("kineticraw"), rawFrameInd
+    )
 
     return data, rawFrameInd, finf
 
 
-def getDMCparam(fn: Path, params: T.Dict[str, T.Any]) -> T.Dict[str, T.Any]:
+def getDMCparam(fn: Path, params: dict[str, T.Any]) -> dict[str, T.Any]:
     """
     nHeadBytes=4 for 2013-2016 data
     nHeadBytes=0 for 2011 data
@@ -85,7 +89,7 @@ def getDMCparam(fn: Path, params: T.Dict[str, T.Any]) -> T.Dict[str, T.Any]:
     return finf
 
 
-def howbig(params: T.Dict[str, T.Any], finf: T.Dict[str, T.Any]) -> T.Dict[str, int]:
+def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
 
     sizes = {"pixels_image": finf["super_x"] * finf["super_y"]}
     sizes["bytes_image"] = sizes["pixels_image"] * BPP // 8
@@ -94,12 +98,16 @@ def howbig(params: T.Dict[str, T.Any], finf: T.Dict[str, T.Any]) -> T.Dict[str, 
     return sizes
 
 
-def whichframes(fn: Path, params: T.Dict[str, T.Any], finf: T.Dict[str, T.Any]) -> np.ndarray:
+def whichframes(
+    fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]
+):
 
     fileSizeBytes = fn.stat().st_size
 
     if fileSizeBytes < finf["bytes_image"]:
-        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame!")
+        raise ValueError(
+            f"File size {fileSizeBytes} is smaller than a single image frame!"
+        )
 
     if fileSizeBytes % finf["bytes_frame"]:
         logging.error(
@@ -115,14 +123,18 @@ def whichframes(fn: Path, params: T.Dict[str, T.Any], finf: T.Dict[str, T.Any]) 
 
         nFrameRaw = last_frame - first_frame + 1
         if nFrameRaw != nFrame:
-            logging.warning(f"there may be missed frames: nFrameRaw {nFrameRaw}   nFrame {nFrame}")
+            logging.warning(
+                f"there may be missed frames: nFrameRaw {nFrameRaw}   nFrame {nFrame}"
+            )
     else:  # CMOS
         nFrame = last_frame - first_frame + 1
 
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
-    ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kineticsec"), allrawframe)
+    ut1_unix_all = frame2ut1(
+        params.get("startUTC"), params.get("kineticsec"), allrawframe
+    )
     # %% setup frame indices
     """
     if no requested frames were specified, read all frames. Otherwise, just
@@ -157,8 +169,8 @@ def whichframes(fn: Path, params: T.Dict[str, T.Any], finf: T.Dict[str, T.Any]) 
 
 
 def getDMCframe(
-    f: T.Union[Tio.BinaryIO, Path], iFrm: int, finf: T.Dict[str, int]
-) -> T.Tuple[np.ndarray, int]:
+    f: T.Union[T.BinaryIO, Path], iFrm: int, finf: dict[str, int]
+) -> tuple:
     """
     read a single image frame
 
@@ -197,7 +209,7 @@ def getDMCframe(
 
     rawFrameInd = meta2rawInd(f, finf["nmetadata"])
 
-    if rawFrameInd is None:  # 2011 no metadata file
+    if rawFrameInd < 1:  # 2011 no metadata file
         rawFrameInd = iFrm + 1  # fallback
 
     return currFrame, rawFrameInd

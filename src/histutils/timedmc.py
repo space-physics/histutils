@@ -11,13 +11,13 @@ Outputs:
 
 Michael Hirsch
 """
+
 from datetime import datetime
-from dateutil.parser import parse
 import numpy as np
 
 
 def frame2ut1(tstart, kineticsec, rawind):
-    """ if you don't have GPS & fire data, you use this function for a software-only
+    """if you don't have GPS & fire data, you use this function for a software-only
     estimate of time. This estimate may be off by more than a minute, so think of it
     as a relative indication only. You can try verifying your absolute time with satellite
     passes in the FOV using a plate-scaled calibration and ephemeris data.
@@ -32,14 +32,14 @@ def frame2ut1(tstart, kineticsec, rawind):
         return
 
 
-def ut12frame(treq, ind, ut1_unix) -> np.ndarray:
+def ut12frame(treq, ind, ut1_unix):
     """
     Given treq, output index(ces) to extract via rawDMCreader
     treq: scalar or vector of ut1_unix time (seconds since Jan 1, 1970)
     ind: zero-based frame index corresponding to ut1_unix, corresponding to input data file.
     """
     if treq is None:  # have to do this since interp1 will return last index otherwise
-        return
+        return None
 
     treq = np.atleast_1d(treq)
     # %% handle human specified string scalar case
@@ -77,7 +77,7 @@ def datetime2unix(T):
                 ut1_unix[i] = float(t)  # it was ut1_unix in a string
                 continue
             except ValueError:
-                t = parse(t)  # datetime in a string
+                t = datetime.fromisoformat(t)  # datetime in a string
         elif isinstance(t, (float, int)):  # assuming ALL are ut1_unix already
             return T
         else:
@@ -90,7 +90,7 @@ def datetime2unix(T):
 
 
 def firetime(tstart, Tfire):
-    """ Highly accurate sub-millisecond absolute timing based on GPSDO 1PPS and camera fire feedback.
+    """Highly accurate sub-millisecond absolute timing based on GPSDO 1PPS and camera fire feedback.
     Right now we have some piecemeal methods to do this, and it's time to make it industrial strength
     code.
 

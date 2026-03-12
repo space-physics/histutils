@@ -5,6 +5,7 @@ functions for loading HST real camera raw data
 INPUT FILE FORMAT: intended for use with "DMCdata" raw format, 4-byte
  "footer" containing frame index (must use typecast)
 """
+
 import logging
 from datetime import datetime
 from time import time
@@ -25,8 +26,7 @@ def getSimulData(sim, cam, odir=None, verbose=0):
 
 
 def HSTsync(sim, cam, verbose):
-    """ this function now uses UT1 time -- seconds since 1970 Jan 1
-    """
+    """this function now uses UT1 time -- seconds since 1970 Jan 1"""
     try:
         if isinstance(sim.startutc, datetime):
             reqStart = sim.startutc.timestamp()
@@ -36,7 +36,9 @@ def HSTsync(sim, cam, verbose):
             reqStop = sim.stoputc
         else:
             raise TypeError("unknown time request format")
-    except AttributeError:  # no specified start,stop, but is there a specifed time list?
+    except (
+        AttributeError
+    ):  # no specified start,stop, but is there a specifed time list?
         try:
             treqlist = atleast_1d(sim.treqlist)
             if isinstance(treqlist[0], datetime):
@@ -46,7 +48,9 @@ def HSTsync(sim, cam, verbose):
             elif isinstance(treqlist[0], str):
                 raise TypeError("parse dates before passing them in here")
             else:
-                logging.error("I did not understand your time request, falling back to all times")
+                logging.error(
+                    "I did not understand your time request, falling back to all times"
+                )
                 reqStart = 0.0  # arbitrary time in the past
                 reqStop = 3e9  # arbitrary time in the future
         except AttributeError:
@@ -91,14 +95,21 @@ def HSTsync(sim, cam, verbose):
     for C in cam:
         if C.usecam:
             ft = interp1d(
-                C.ut1unix, arange(C.ut1unix.size, dtype=int), kind="nearest", bounds_error=False,
+                C.ut1unix,
+                arange(C.ut1unix.size, dtype=int),
+                kind="nearest",
+                bounds_error=False,
             )
 
             ind = around(ft(treq))
             ind = ind[isfinite(ind)]  # discard requests outside of file bounds
             # these are the indices for each time (the slower camera will use some frames twice in a row)
             C.pbInd = ind.astype(int)
-            print("using frames {} to {} for camera {}".format(C.pbInd[0], C.pbInd[-1], C.name))
+            print(
+                "using frames {} to {} for camera {}".format(
+                    C.pbInd[0], C.pbInd[-1], C.name
+                )
+            )
 
     sim.nTimeSlice = treq.size
 

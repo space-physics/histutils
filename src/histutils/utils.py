@@ -1,16 +1,15 @@
 from pathlib import Path
 import numpy as np
-import typing as T
 import shutil
 import re
 
 
-def write_quota(outbytes: int, outfn: Path, limitGB: float = 10e9) -> int:
+def write_quota(outbytes: int, outfn: Path | None, limitGB: float = 10e9) -> int:
     """
     aborts writing if not enough space on drive to write
     """
     if not outfn:
-        return None
+        return 0
 
     # NOTE: Must have .resolve() to avoid false tripping on soft-linked external drives!
     outfn = Path(outfn).expanduser().resolve()
@@ -23,13 +22,13 @@ def write_quota(outbytes: int, outfn: Path, limitGB: float = 10e9) -> int:
     if (freeout - outbytes) < limitGB:
         raise OSError(
             f"low disk space on {outfn.parent}\n"
-            f"{freeout/1e9:.1f} GByte free, wanting to write {outbytes/1e9:.2f} GByte to {outfn}."
+            f"{freeout / 1e9:.1f} GByte free, wanting to write {outbytes / 1e9:.2f} GByte to {outfn}."
         )
 
     return freeout
 
 
-def sixteen2eight(img: np.ndarray, Clim: T.Tuple[int, int]) -> np.ndarray:
+def sixteen2eight(img, Clim: tuple[int, int]):
     """
     scipy.misc.bytescale had bugs
 
@@ -44,7 +43,7 @@ def sixteen2eight(img: np.ndarray, Clim: T.Tuple[int, int]) -> np.ndarray:
     return Q.round().astype(np.uint8)  # convert to uint8
 
 
-def normframe(img: np.ndarray, Clim: T.Tuple[int, int]) -> np.ndarray:
+def normframe(img, Clim: tuple[int, int]):
     """
     inputs:
     -------
@@ -98,7 +97,7 @@ def splitconf(conf, key, i=None, dtype=float, fallback=None, sep: str = ","):
             return fallback
 
 
-def get_camera_serial_number(files: T.Iterable[Path]) -> T.Dict[str, int]:
+def get_camera_serial_number(files: list[Path]) -> dict[str, int]:
     """
     This function assumes the serial number of the camera is in a particular place in the filename.
     This is how the original 2011 image-writing program worked, and I've
