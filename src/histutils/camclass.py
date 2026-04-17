@@ -2,7 +2,7 @@ from pathlib import Path
 import logging
 import numpy as np
 from numpy.testing import assert_allclose
-from datetime import datetime
+from datetime import datetime, timezone
 from scipy.signal import savgol_filter
 from numpy.random import poisson
 import h5py
@@ -19,8 +19,9 @@ import themisasi
 from .plots import plotnear_rc, plotlsq_rc
 
 
-class Cam:  # use this like an advanced version of Matlab struct
+class Cam:
     """
+    use this like an advanced version of Matlab struct
     simple mode via try except attributeerror
     """
 
@@ -279,8 +280,8 @@ class Cam:  # use this like an advanced version of Matlab struct
 
             logging.info(
                 f"Camera {self.name} start/stop UTC:"
-                f"{datetime.utcfromtimestamp(self.ut1unix[0])} / "
-                f"{datetime.utcfromtimestamp(self.ut1unix[-1])}  "
+                f"{datetime.fromtimestamp(self.ut1unix[0], timezone.utc)} / "
+                f"{datetime.fromtimestamp(self.ut1unix[-1], timezone.utc)}  "
                 f"{self.ut1unix.size} frames."
             )
 

@@ -27,28 +27,27 @@ import logging
 #
 from ..dio import dir2fn, vid2h5
 from ..rawDMCreader import goRead
-from ..plots import doPlayMovie, doplotsave
 
 
-def dmclooper(p):
+def dmclooper(p: dict):
 
     params = {
-        "kineticsec": p.kineticsec,
-        "rotccw": p.rotccw,
-        "transpose": p.transpose,
-        "flipud": p.flipud,
-        "fliplr": p.fliplr,
-        "fire": p.fire,
-        "sensorloc": p.loc,
+        "kineticsec": p["kineticsec"],
+        "rotccw": p["rotccw"],
+        "transpose": p["transpose"],
+        "flipud": p["flipud"],
+        "fliplr": p["fliplr"],
+        "fire": p["fire"],
+        "sensorloc": p["loc"],
         "cmdlog": " ".join(argv),
-        "header_bytes": p.headerbytes,
-        "xy_pixel": p.pix,
-        "xy_bin": p.bin,
-        "frame_request": p.frames,
+        "header_bytes": p["headerbytes"],
+        "xy_pixel": p["pix"],
+        "xy_bin": p["bin"],
+        "frame_request": p["frames"],
     }
 
     # %% find file(s) user specified
-    infn = Path(p.infile).expanduser()
+    infn = Path(p["infile"]).expanduser()
     if infn.is_file():
         flist = [infn]
     elif infn.is_dir():
@@ -59,7 +58,7 @@ def dmclooper(p):
     N = len(flist)
 
     for i, fn in enumerate(flist):
-        params["outfn"] = dir2fn(p.outdir, fn, ".h5")
+        params["outfn"] = dir2fn(p["outdir"], fn, ".h5")
         if params["outfn"].is_file():
             logging.warning(f"\nskipping {params['outfn']} {fn}")
             continue
@@ -71,17 +70,6 @@ def dmclooper(p):
         rawImgData, rawind, finf = goRead(fn, params)
         # %% convert
         vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params)
-        # %% optional plot
-        if p.movie:
-            plots(rawImgData, rawind, finf)
-
-
-def plots(rawImgData, rawind, finf):
-    try:
-        doPlayMovie(rawImgData, p.movie, ut1_unix=finf["ut1"], clim=p.clim)
-        doplotsave(p.infile, rawImgData, rawind, p.clim, p.hist, p.avg)
-    except Exception:
-        pass
 
 
 if __name__ == "__main__":
@@ -164,4 +152,4 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
 
-    dmclooper(P)
+    dmclooper(vars(P))

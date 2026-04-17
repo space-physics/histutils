@@ -2,11 +2,11 @@ from pathlib import Path
 import numpy as np
 import h5py
 from typing import Any
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 
-def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path | None:
+def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path:
     """
 
     Parameters
@@ -25,27 +25,19 @@ def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path | None:
     ofn: pathlib.Path
         filename to write
     """
-    if not ofn:  # no output file desired
-        return None
 
     ofn = Path(ofn).expanduser()
     ifn = Path(ifn).expanduser()
     if not ifn.is_file():
         raise FileNotFoundError(ifn)
 
-    if ofn.suffix == suffix:  # must already be a filename
-        pass
-    else:  # must be a directory
+    if ofn.suffix != suffix:
+        # must be a directory
         ofn.mkdir(parents=True, exist_ok=True)
         ofn = ofn / ifn.with_suffix(suffix).name
 
-    try:
-        if ofn.samefile(ifn):
-            raise FileExistsError(f"do not overwrite input file! {ifn}")
-    except (
-        FileNotFoundError
-    ):  # a good thing, the output file doesn't exist and hence it's not the input file
-        pass
+    if ofn.is_file() and ofn.samefile(ifn):
+        raise FileExistsError(f"do not overwrite input file! {ifn}")
 
     return ofn
 
@@ -143,8 +135,8 @@ def vid2h5(
 
         if ut1 is not None:
             print(
-                f"writing from {datetime.utcfromtimestamp(ut1[0])}"
-                f"to {datetime.utcfromtimestamp(ut1[-1])}"
+                f"writing from {datetime.fromtimestamp(ut1[0], timezone.utc)}"
+                f"to {datetime.fromtimestamp(ut1[-1], timezone.utc)}"
             )
             if "ut1_unix" not in f:
                 fut1 = f.create_dataset(

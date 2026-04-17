@@ -8,7 +8,6 @@ try:
 except ImportError:
     skml = None
 #
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from matplotlib.pyplot import figure, hist, draw, pause, show
 from matplotlib.colors import LogNorm
 
@@ -18,15 +17,22 @@ from matplotlib.colors import LogNorm
 from pymap3d import ecef2geodetic
 
 
-def doPlayMovie(data, playMovie, ut1_unix=None, rawFrameInd=None, clim=None):
-    if not playMovie or data is None:
+def doPlayMovie(
+    data,
+    playMovie: float | None,
+    ut1_unix: list[int] | None = None,
+    rawFrameInd: list[int] | None = None,
+    clim: tuple[int, int] | None = None,
+) -> None:
+
+    if playMovie is None or data is None:
         return
     # %%
     # sfmt = ScalarFormatter(useMathText=True)
     hf1 = figure(1)
     hAx = hf1.gca()
 
-    try:
+    if clim is not None:
         hIm = hAx.imshow(
             data[0, ...],
             vmin=clim[0],
@@ -35,7 +41,7 @@ def doPlayMovie(data, playMovie, ut1_unix=None, rawFrameInd=None, clim=None):
             origin="lower",
             norm=LogNorm(),
         )
-    except TypeError:  # clim wasn't specified properly
+    else:
         print("setting image viewing limits based on first frame")
         hIm = hAx.imshow(data[0, ...], cmap="gray", origin="lower", norm=LogNorm())
 
@@ -52,14 +58,14 @@ def doPlayMovie(data, playMovie, ut1_unix=None, rawFrameInd=None, clim=None):
 
     for i, d in enumerate(data):
         hIm.set_data(d)
-        try:
+        if ut1_unix is not None and rawFrameInd is not None:
             if titleut:
                 hT.set_text(
-                    f"UT1 estimate: {datetime.utcfromtimestamp(ut1_unix[i])}  RelFrame#: {i}"
+                    f"UT1 estimate: {datetime.fromtimestamp(ut1_unix[i])}  RelFrame#: {i}"
                 )
             else:
                 hT.set_text(f"RawFrame#: {rawFrameInd[i]} RelFrame# {i}")
-        except TypeError:
+        else:
             hT.set_text(f"RelFrame# {i}")
 
         draw()

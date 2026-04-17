@@ -6,7 +6,7 @@ INPUT FILE FORMAT: intended for use with "DMCdata" raw format, 4-byte
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from time import time
 import h5py
 from numpy import arange, unique, atleast_1d, around, array, isfinite
@@ -70,8 +70,8 @@ def HSTsync(sim, cam, verbose):
 
     logging.info(
         f"{tall.size} mutual frames available "
-        f"from {datetime.utcfromtimestamp(mutualStart)}"
-        f"to {datetime.utcfromtimestamp(mutualStop)}"
+        f"from {datetime.fromtimestamp(mutualStart, timezone.utc)}"
+        f"to {datetime.fromtimestamp(mutualStop, timezone.utc)}"
     )
     # %% adjust start/stop to user request
     try:
