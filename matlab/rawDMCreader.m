@@ -2,7 +2,7 @@
 %
 % reads uint16 raw data files from DMC
 % Tested with Octave 4.0 & Matlab R2014a
-% Michael Hirsch Dec 2011 / Mar 2012 / Mar 2014
+%  Dec 2011 / Mar 2012 / Mar 2014
 %
 % requires: getRawInd.m (custom written script)
 %

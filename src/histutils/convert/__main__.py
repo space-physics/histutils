@@ -6,7 +6,7 @@ Converts 2011 Poker/Ester and 2013-2016 HiST raw data files to HDF5 for easy con
 
 full command example with metadata:
 
-    python -m histutils.convert ~/U/irs_archive3/HSTdata/2013-04-14-HST0/2013-04-14T07-00-CamSer7196.DMCdata \
+    python -m histutils.convert ~/data/PokerFlat/2013-04-14/hst/2013-04-14T07-00-CamSer7196.DMCdata \
       -s 2013-04-14T06:59:55Z -k 0.018867924528301886 -t 2013-04-14T11:30:00Z 2013-04-14T11:30:02Z \
       -o /tmp/2013-04-14T113000_hst0.h5 -l 65.1186367 -147.432975 500
 

@@ -32,9 +32,7 @@ python -m histutils.multiplay -i ~/data/cmos2013-01-14T1-15.h5 ~/data/ccd2013-01
 * -t Time range start/stop
 * -o Output directory for plots (optional, slow)
 
-using the
-[data from January 13, 2013 experiment](http://heaviside.bu.edu/~mhirsch/dmc/2013-01-13/)
-during active plasma time.
+using the data from January 13, 2013 experiment during active plasma time.
 
 ---
 

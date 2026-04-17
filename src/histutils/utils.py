@@ -30,13 +30,13 @@ def write_quota(outbytes: int, outfn: Path | None, limitGB: float = 10e9) -> int
 
 def sixteen2eight(img, Clim: tuple[int, int]):
     """
-    scipy.misc.bytescale had bugs
+    Scale 16-bit image data to 8-bit, with clipping and stretching.
 
     inputs:
     ------
     I: 2-D Numpy array of grayscale image data
     Clim: length 2 of tuple or numpy 1-D array specifying lowest and highest expected values in grayscale image
-    Michael Hirsch, Ph.D.
+
     """
     Q = normframe(img, Clim)
     Q *= 255  # stretch to [0,255] as a float

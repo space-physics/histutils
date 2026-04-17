@@ -1,5 +1,4 @@
 function reqUTC = getFrameUTC(BigFN,ReqFrameInd,BytesPerImage,nHeadBytes)
-% Michael Hirsch
 % summing up scattered functions from 2011 to 2014
 % this UTC timing is NOT guaranteed, that's what we're working to verify!
 % this method bases UTC time on the knowledge of the first frame UTC time from

@@ -9,7 +9,6 @@ Outputs:
 --------
     UT1_unix:   double-precision float (64-bit) estimate of frame exposure START
 
-Michael Hirsch
 """
 
 from datetime import datetime
@@ -17,13 +16,12 @@ import numpy as np
 
 
 def frame2ut1(tstart, kineticsec, rawind):
-    """if you don't have GPS & fire data, you use this function for a software-only
+    """
+    if you don't have GPS & fire data, you use this function for a software-only
     estimate of time. This estimate may be off by more than a minute, so think of it
     as a relative indication only. You can try verifying your absolute time with satellite
     passes in the FOV using a plate-scaled calibration and ephemeris data.
-    Contact Michael Hirsch, he does have Github code for this.
     """
-    # total_seconds is required for Python 2 compatibility
     # this variable is in units of seconds since Jan 1, 1970, midnight
     # rawind-1 because camera is one-based indexing
     try:

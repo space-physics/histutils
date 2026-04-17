@@ -1,6 +1,5 @@
 """
-functions for loading HST real camera raw data
- michael hirsch 2014, ported from Matlab code
+functions for loading HST real camera raw data, ported from Matlab code
 
 INPUT FILE FORMAT: intended for use with "DMCdata" raw format, 4-byte
  "footer" containing frame index (must use typecast)
