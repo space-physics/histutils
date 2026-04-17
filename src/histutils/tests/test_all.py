@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from pathlib import Path
 import numpy as np
-import pytest
 
 from histutils.rawDMCreader import goRead
 
@@ -31,7 +30,3 @@ def test_rawread():
     assert testind == 710730
     assert (testframe[0, :5, 0] == [956, 700, 1031, 730, 732]).all()
     assert (testframe[0, -5:, -1] == [1939, 1981, 1828, 1752, 1966]).all()
-
-
-if __name__ == "__main__":
-    pytest.main(["-xrsv", __file__])

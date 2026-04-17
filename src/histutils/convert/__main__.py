@@ -1,20 +1,22 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
+formerly was script ConvertDMC2h5.py
+
 Converts 2011 Poker/Ester and 2013-2016 HiST raw data files to HDF5 for easy consumption
 
 full command example with metadata:
 
-    python ConvertDMC2h5.py ~/U/irs_archive3/HSTdata/2013-04-14-HST0/2013-04-14T07-00-CamSer7196.DMCdata \
+    python -m histutils.convert ~/U/irs_archive3/HSTdata/2013-04-14-HST0/2013-04-14T07-00-CamSer7196.DMCdata \
       -s 2013-04-14T06:59:55Z -k 0.018867924528301886 -t 2013-04-14T11:30:00Z 2013-04-14T11:30:02Z \
       -o /tmp/2013-04-14T113000_hst0.h5 -l 65.1186367 -147.432975 500
 
 simple command example w/o full metadata (can append metadata later):
 
-    python  ConvertDMC2h5.py ~/extdrive/2011-03-01T1000/ -o ~/data/2011-03-01 --headerbytes 0
+    python -m histutils.convert ~/extdrive/2011-03-01T1000/ -o ~/data/2011-03-01 --headerbytes 0
 
 HiST simple conversion of entire night (without metadata, which can be appended later):
 
-    python ConvertDMC2h5.py ~/data/2014-04-24 -o ~/work/2014-04-24
+    python -m histutils.convert ~/data/2014-04-24 -o ~/work/2014-04-24
 """
 
 from pathlib import Path
@@ -23,9 +25,9 @@ from numpy import int64
 import logging
 
 #
-from histutils.dio import dir2fn, vid2h5
-from histutils.rawDMCreader import goRead
-from histutils.plots import doPlayMovie, doplotsave
+from ..dio import dir2fn, vid2h5
+from ..rawDMCreader import goRead
+from ..plots import doPlayMovie, doplotsave
 
 
 def dmclooper(p):

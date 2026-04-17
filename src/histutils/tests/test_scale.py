@@ -14,7 +14,3 @@ def test_nearazel():
 
     assert row[0] == 1
     assert col[0] == 1
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])

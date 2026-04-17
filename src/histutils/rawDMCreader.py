@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 reads .DMCdata files and displays them
 
@@ -22,9 +21,7 @@ BPP = 16  # bits per pixel
 # NHEADBYTES = 4
 
 
-def goRead(
-    infn: Path, params: dict[str, T.Any]
-) -> tuple:
+def goRead(infn: Path, params: dict[str, T.Any]) -> tuple:
 
     infn = Path(infn).expanduser()
     # %% setup data parameters
@@ -98,9 +95,7 @@ def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
     return sizes
 
 
-def whichframes(
-    fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]
-):
+def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
 
     fileSizeBytes = fn.stat().st_size
 
@@ -168,9 +163,7 @@ def whichframes(
     return FrameIndRel
 
 
-def getDMCframe(
-    f: T.Union[T.BinaryIO, Path], iFrm: int, finf: dict[str, int]
-) -> tuple:
+def getDMCframe(f: T.Union[T.BinaryIO, Path], iFrm: int, finf: dict[str, int]) -> tuple:
     """
     read a single image frame
 

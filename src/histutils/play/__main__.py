@@ -1,14 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-Plays video contained in HDF5 file, especially from rawDMCreader program.
+formerly was script Playh5.py
+
+Playback or convert to end-user friendly video contained in HDF5 file
 """
 
 from pathlib import Path
 import h5py
 import numpy as np
 
-from histutils.utils import sixteen2eight
-from histutils.plots import doPlayMovie
+from ..utils import sixteen2eight
+from ..plots import doPlayMovie
 
 
 def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: tuple[int, int]):

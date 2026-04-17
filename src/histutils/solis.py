@@ -19,7 +19,7 @@ def getNeoParam(
     FrameIndReq=None,
     kineticsec=None,
     startUTC=None,
-    cmosinit: dict | None = None
+    cmosinit: dict | None = None,
 ):
     """
     assumption is that this is a Neo sCMOS FITS / TIFF file, where Solis chooses to break up the recordings
