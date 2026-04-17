@@ -2,7 +2,7 @@
 from pathlib import Path
 import numpy as np
 
-from histutils.rawDMCreader import goRead
+from histutils.rawDMCreader import read
 
 R = Path(__file__).parent
 
@@ -17,9 +17,9 @@ def test_rawread():
         "header_bytes": 4,
     }
 
-    testframe, testind, finf = goRead(bigfn, params)
+    testframe, testind, finf = read(bigfn, params)
 
-    # these are both tested by goRead
+    # these are both tested by read
     # finf = getDMCparam(bigfn,(512,512),(1,1),None,verbose=2)
     # with open(bigfn,'rb') as f:
     #    testframe,testind = getDMCframe(f,iFrm=1,finf=finf,verbose=2)

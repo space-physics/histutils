@@ -21,12 +21,12 @@ BPP = 16  # bits per pixel
 # NHEADBYTES = 4
 
 
-def goRead(infn: Path, params: dict[str, T.Any]) -> tuple:
+def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
 
-    infn = Path(infn).expanduser()
+    fn = Path(infn).expanduser()
     # %% setup data parameters
     # preallocate *** LABVIEW USES ROW-MAJOR ORDERING C ORDER
-    finf = getDMCparam(infn, params)
+    finf = getDMCparam(fn, params)
     write_quota(finf["bytes_frame"] * finf["nframeextract"], params.get("outfn"))
 
     rawFrameInd = np.zeros(finf["nframeextract"], dtype=np.int64)
@@ -41,7 +41,7 @@ def goRead(infn: Path, params: dict[str, T.Any]) -> tuple:
             order="C",
         )
     # %% read
-    with infn.open("rb") as fid:
+    with fn.open("rb") as fid:
         # j and i are NOT the same in general when not starting from beginning of file!
         for j, i in enumerate(finf["frameindrel"]):
             D, rawFrameInd[j] = getDMCframe(fid, i, finf)
@@ -66,9 +66,6 @@ def getDMCparam(fn: Path, params: dict[str, T.Any]) -> dict[str, T.Any]:
         "nmetadata": params["header_bytes"] // 2,
         "header_bytes": params["header_bytes"],
     }  # FIXME for DMCdata version 1 only
-
-    if not fn.is_file():  # leave this here, getsize() doesn't fail on directory
-        raise FileNotFoundError(fn)
 
     # int() in case we are fed a float or int
     finf["super_x"] = int(params["xy_pixel"][0] // params["xy_bin"][0])
@@ -96,6 +93,9 @@ def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
 
 
 def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
+
+    if not fn.is_file():
+        raise FileNotFoundError(fn)
 
     fileSizeBytes = fn.stat().st_size
 

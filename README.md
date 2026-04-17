@@ -67,5 +67,5 @@ These examples are old, now we use HDF5 files. Kept for reference only.
 
 ```sh
 from histutils import rawDMCreader
-data = rawDMCreader.goRead('myfile.DMCdata')[0]
+data = rawDMCreader.read('myfile.DMCdata')[0]
 ```

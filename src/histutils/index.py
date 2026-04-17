@@ -5,6 +5,10 @@ from struct import pack, unpack
 
 
 def getRawInd(fn: Path, finf: dict[str, int]) -> tuple[int, int]:
+
+    if not fn.is_file():
+        raise FileNotFoundError(fn)
+
     if not isinstance(finf["nmetadata"], int):
         raise TypeError(finf["nmetadata"])
 

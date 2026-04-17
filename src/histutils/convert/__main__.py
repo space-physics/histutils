@@ -26,10 +26,13 @@ import logging
 
 #
 from ..dio import dir2fn, vid2h5
-from ..rawDMCreader import goRead
+from ..rawDMCreader import read
 
 
-def dmclooper(p: dict):
+def convert_files(p: dict):
+    """
+    converts .DMCdata files to .h5 files, with metadata
+    """
 
     params = {
         "kineticsec": p["kineticsec"],
@@ -67,7 +70,7 @@ def dmclooper(p: dict):
             f"\n file {i + 1} / {N}   {i + 1 / N * 100.0:.1f} % done with {flist[0].parent}"
         )
 
-        rawImgData, rawind, finf = goRead(fn, params)
+        rawImgData, rawind, finf = read(fn, params)
         # %% convert
         vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params)
 
@@ -152,4 +155,4 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
 
-    dmclooper(vars(P))
+    convert_files(vars(P))
