@@ -21,7 +21,6 @@ HiST simple conversion of entire night (without metadata, which can be appended 
 
 from pathlib import Path
 from sys import argv
-from numpy import int64
 import logging
 
 #
@@ -100,7 +99,7 @@ if __name__ == "__main__":
         help="frame indices of file (not raw)",
         nargs=3,
         metavar=("start", "stop", "stride"),
-        type=int64,
+        type=int,
     )  # don't use string
     p.add_argument("-m", "--movie", help="seconds per frame. ", type=float)
     p.add_argument(
