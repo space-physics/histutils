@@ -19,6 +19,7 @@ HiST simple conversion of entire night (without metadata, which can be appended 
     python -m histutils.convert ~/data/2014-04-24 -o ~/work/2014-04-24
 """
 
+import itertools
 from pathlib import Path
 from sys import argv
 import logging
@@ -50,7 +51,7 @@ def dmclooper(p: dict):
     if infn.is_file():
         flist = [infn]
     elif infn.is_dir():
-        flist = sorted(infn.glob("*.DMCdata")) + sorted(infn.glob("*.dat"))
+        flist = sorted(itertools.chain(infn.glob("*.DMCdata"), infn.glob("*.dat")))
     else:
         raise FileNotFoundError(infn)
 
