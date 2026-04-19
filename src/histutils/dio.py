@@ -76,6 +76,7 @@ def vid2h5(
     ut1,
     rawind,
     ticks,
+    outfn: Path,
     params: dict[str, Any],
     i: int = 0,
     Nfile: int = 1,
@@ -84,10 +85,7 @@ def vid2h5(
     cmdlog: str | None = None,
 ):
 
-    if not params.get("outfn"):
-        raise OSError('must specify file to write in params["outfn"]')
-
-    outfn = Path(params["outfn"]).expanduser()
+    outfn = Path(outfn).expanduser()
     if outfn.is_dir():
         raise IsADirectoryError(outfn)
     outfn.parent.mkdir(exist_ok=True)

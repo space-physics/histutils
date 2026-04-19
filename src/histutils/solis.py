@@ -10,7 +10,7 @@ except ImportError:
 
 from astropy.io import fits
 
-from .rawDMCreader import howbig  # , whichframes
+from .rawDMCreader import howbig
 from .timedmc import frame2ut1
 
 

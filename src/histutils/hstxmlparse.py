@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 
-def xmlparam(fn: Path) -> Dict[str, Any]:
+def xmlparam(fn: str | Path) -> Dict[str, Any]:
     """
     reads necessary camera parameters into dict
 
@@ -19,7 +19,7 @@ def xmlparam(fn: Path) -> Dict[str, Any]:
     Parameters
     ----------
 
-    fn : pathlib.Path
+    fn : str | pathlib.Path
         filename of XML file corresponding to .DMCdata file
 
     Returns
@@ -28,6 +28,9 @@ def xmlparam(fn: Path) -> Dict[str, Any]:
     params : dict
         camera parameters of interest
     """
+
+    fn = Path(fn).expanduser()
+
     tree = ET.parse(fn)
 
     root = tree.getroot()

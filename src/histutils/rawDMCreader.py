@@ -95,7 +95,9 @@ def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
     return sizes
 
 
-def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
+def whichframes(
+    fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any], outfn: Path | None = None
+):
 
     if not fn.is_file():
         raise FileNotFoundError(fn)
@@ -154,7 +156,7 @@ def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
         f"Extracted {nFrameExtract} frames from {fn} totaling {bytes_extract / 1e9:.2f} GB."
     )
 
-    if bytes_extract > 4e9 and "outfn" not in params:
+    if bytes_extract > 4e9 and not outfn:
         logging.info(f"This will require {bytes_extract / 1e9:.2f} GB of RAM.")
 
     return FrameIndRel
