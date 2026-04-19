@@ -8,10 +8,14 @@ import histutils.dio
 import histutils.rawDMCreader
 
 # path to the data. This will probably be distinct for your computer.
-fn = "~/Google Drive/My Drive/Data/PokerFlat/2013-04-11/hst/raw/2013-04-11T07-00-CamSer1387_frames_402209-1-403708.DMCdata"
+fn = Path(
+    "~/Google Drive/My Drive/Data/PokerFlat/2013-04-11/hst/raw/2013-04-11T07-00-CamSer1387_frames_402209-1-403708.DMCdata"
+)
 
 # where to store the converted data
-outdir = "./"
+outdir = Path("./")
+
+outfn = outdir / fn.name.replace(".DMCdata", ".h5")
 
 # TODO: these should be read from XML file.
 
@@ -24,14 +28,13 @@ params = {
     "transpose": False,
     "flipud": False,
     "fliplr": False,
-    "outfn": Path(outdir) / Path(fn).name.replace(".DMCdata", ".h5"),
 }
 
-if params["outfn"].is_file():
+if outfn.is_file():
     raise FileExistsError(
-        f"{params['outfn']} already exists. Please delete or move it before running this script."
+        f"{outfn} already exists. Please delete or move it before running this script."
     )
 
-_, rawind, finf = histutils.rawDMCreader.read(fn, params)
+_, rawind, finf = histutils.rawDMCreader.read(fn, params, outfn)
 
 histutils.dio.vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params)

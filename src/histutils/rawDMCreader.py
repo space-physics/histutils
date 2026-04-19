@@ -21,18 +21,23 @@ BPP = 16  # bits per pixel
 # NHEADBYTES = 4
 
 
-def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
+def read(infn: str | Path, params: dict[str, T.Any], outfn: str | Path | None = None) -> tuple:
+    """
+    if outfn is a path string, write to file,
+    otherwise return data as variable - the variable can be very large.
+    """
 
     fn = Path(infn).expanduser()
     # %% setup data parameters
     # preallocate *** LABVIEW USES ROW-MAJOR ORDERING C ORDER
     finf = getDMCparam(fn, params)
-    write_quota(finf["bytes_frame"] * finf["nframeextract"], params.get("outfn"))
+    write_quota(finf["bytes_frame"] * finf["nframeextract"], outfn)
 
     rawFrameInd = np.zeros(finf["nframeextract"], dtype=np.int64)
     # %% output (variable or file)
-    if params.get("outfn"):
-        setupimgh5(params["outfn"], finf)
+    if outfn:
+        outfn = Path(outfn).expanduser()
+        setupimgh5(outfn, finf)
         data = np.ndarray([])
     else:
         data = np.zeros(
@@ -45,8 +50,8 @@ def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
         # j and i are NOT the same in general when not starting from beginning of file!
         for j, i in enumerate(finf["frameindrel"]):
             D, rawFrameInd[j] = getDMCframe(fid, i, finf)
-            if params.get("outfn"):
-                imgwriteincr(params["outfn"], D, j)
+            if outfn:
+                imgwriteincr(outfn, D, j)
             else:
                 data[j, ...] = D
     # %% absolute time estimate, software timing (at your peril)

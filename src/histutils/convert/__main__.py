@@ -61,16 +61,16 @@ def convert_files(p: dict):
     N = len(flist)
 
     for i, fn in enumerate(flist):
-        params["outfn"] = dir2fn(p["outdir"], fn, ".h5")
-        if params["outfn"].is_file():
-            logging.warning(f"\nskipping {params['outfn']} {fn}")
+        outfn = dir2fn(p["outdir"], fn, ".h5")
+        if outfn.is_file():
+            logging.warning(f"\nskipping {outfn} {fn}")
             continue
 
         logging.info(
             f"\n file {i + 1} / {N}   {i + 1 / N * 100.0:.1f} % done with {flist[0].parent}"
         )
 
-        rawImgData, rawind, finf = read(fn, params)
+        _, rawind, finf = read(fn, params, outfn)
         # %% convert
         vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params)
 

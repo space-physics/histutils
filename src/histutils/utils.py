@@ -4,7 +4,7 @@ import shutil
 import re
 
 
-def write_quota(outbytes: int, outfn: Path | None, limitGB: float = 10e9) -> int:
+def write_quota(outbytes: int, outfn: str | Path | None, limitGB: float = 10e9) -> int:
     """
     aborts writing if not enough space on drive to write
     """
