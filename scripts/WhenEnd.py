@@ -16,13 +16,9 @@ p = ArgumentParser(
 )
 p.add_argument("starttime", help="date and time of first frame")
 p.add_argument("fps", help="frames per second", type=float)
-p.add_argument(
-    "-k", "--frameind", help="frame indices to give times for", nargs="+", type=int
-)
+p.add_argument("-k", "--frameind", help="frame indices to give times for", nargs="+", type=int)
 p.add_argument("--xy", help="binned pixel count", nargs=2, type=int)
-p.add_argument(
-    "-f", "--filesize", help="file size in bytes of big .DMCdata file", type=int
-)
+p.add_argument("-f", "--filesize", help="file size in bytes of big .DMCdata file", type=int)
 p.add_argument(
     "--nheadbytes",
     help="number of bytes in each frame for header (default 4)",

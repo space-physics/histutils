@@ -194,9 +194,7 @@ if __name__ == "__main__":
         type=int,
         default=(1200, 1200),
     )
-    p.add_argument(
-        "--png", help="write large numbers of PNGs instead of AVI", action="store_true"
-    )
+    p.add_argument("--png", help="write large numbers of PNGs instead of AVI", action="store_true")
     P = p.parse_args()
 
     cpar = {
@@ -213,6 +211,4 @@ if __name__ == "__main__":
         "png": P.png,
     }
 
-    getmulticam(
-        P.flist, P.tstartstop, P.frames, cpar, P.outdir, P.clist, " ".join(argv)
-    )
+    getmulticam(P.flist, P.tstartstop, P.frames, cpar, P.outdir, P.clist, " ".join(argv))

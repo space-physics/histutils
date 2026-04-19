@@ -107,9 +107,7 @@ plt.figure(2).clf()
 fg, axs = plt.subplots(1, 2, num=2)
 
 ax = axs[0]
-h = ax.imshow(
-    uvmag, cmap="cubehelix_r", vmin=500, vmax=4000, origin="bottom"
-)  # norm=LogNorm(),
+h = ax.imshow(uvmag, cmap="cubehelix_r", vmin=500, vmax=4000, origin="bottom")  # norm=LogNorm(),
 fg.colorbar(h, ax=ax)
 ax.set_title("|dx,dy|")
 ax.set_xlabel("x")

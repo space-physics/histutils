@@ -73,15 +73,11 @@ class Cam:
                 self.clim[1] = splitconf(cp, "plotMaxVal", ci)
             # %% store az,el calibration data
             if self.name.startswith("dasc"):
-                dasc = dio.loadcal(
-                    cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci]
-                )
+                dasc = dio.loadcal(cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci])
             elif self.name.startswith("themis"):
                 themis = themisasi.loadcal(cp["azcalfn"].split(",")[ci])
             else:
-                raise ValueError(
-                    f"I do not know how to load az/el data for {self.name}"
-                )
+                raise ValueError(f"I do not know how to load az/el data for {self.name}")
 
             if "realvid" in makeplot:
                 if "h5" in makeplot and sim.fovfn:
@@ -121,9 +117,7 @@ class Cam:
         self.clim[0] = splitconf(cp, "plotMinVal", ci)
         self.clim[1] = splitconf(cp, "plotMaxVal", ci)
 
-        self.intensityScaleFactor = splitconf(
-            cp, "intensityScaleFactor", ci, fallback=1.0
-        )
+        self.intensityScaleFactor = splitconf(cp, "intensityScaleFactor", ci, fallback=1.0)
         self.lowerthres = splitconf(cp, "lowerthres", ci)
         # %% check FOV and 1D cut sizes for sanity
         self.fovmaxlen = splitconf(cp, "FOVmaxLengthKM", ci, fallback=np.nan)
@@ -177,9 +171,7 @@ class Cam:
         if sim.realdata and self.usecam and isinstance(self.name, str):
             if isinstance(cp["fn"], str):
                 # .strip() needed in case of multi-line ini
-                self.fn = (
-                    sim.realdatapath / cp["fn"].split(",")[ci].strip()
-                ).expanduser()
+                self.fn = (sim.realdatapath / cp["fn"].split(",")[ci].strip()).expanduser()
             elif isinstance(cp["fn"], Path):
                 self.fn = sim.realdatapath / cp["fn"]
             else:
@@ -227,9 +219,7 @@ class Cam:
                     self.lon = c["lon"].item()
                     self.alt_m = c["alt_m"].item()
             else:
-                raise OSError(
-                    f"I am not sure how to work with the data for {self.name}"
-                )
+                raise OSError(f"I am not sure how to work with the data for {self.name}")
 
         elif not sim.realdata:  # sim ONLY
             self.kineticsec = splitconf(cp, "kineticsec", ci)  # simulation
@@ -263,9 +253,7 @@ class Cam:
         """
         try:
             if self.pedn is not None:
-                self.dn2intens = self.pedn / (
-                    self.kineticsec * self.pixarea_sqcm * self.ampgain
-                )
+                self.dn2intens = self.pedn / (self.kineticsec * self.pixarea_sqcm * self.ampgain)
                 if sim.realdata:
                     self.intens2dn = 1.0
                 else:
@@ -304,12 +292,10 @@ class Cam:
         # ModelRaySpacingDeg = np.mean( np.diff(pixAngleDeg[:,iCam],n=1) ) # for reference purposes
 
     def toecef(self, ranges):
-        assert isinstance(self.Baz, float), (
-            "please specify [cam]Bincl, [cam]Bdecl for each camera in .ini file"
-        )
-        assert isinstance(self.lat, float), (
-            "please specify [cam]latitude, [cam]longitude"
-        )
+        assert isinstance(
+            self.Baz, float
+        ), "please specify [cam]Bincl, [cam]Bdecl for each camera in .ini file"
+        assert isinstance(self.lat, float), "please specify [cam]latitude, [cam]longitude"
         self.x2mz, self.y2mz, self.z2mz = aer2ecef(
             self.Baz, self.Bel, ranges, self.lat, self.lon, self.alt_m
         )
@@ -354,10 +340,10 @@ class Cam:
         NOTE: we need to retrieve values in case no modifications are done.
         (since we'd get a closed h5py handle)
         """
-        assert self.cal1Dfn.is_file(), (
-            "please specify filename for each camera under [cam]/cal1Dname: in .ini file  {}".format(
-                self.cal1Dfn
-            )
+        assert (
+            self.cal1Dfn.is_file()
+        ), "please specify filename for each camera under [cam]/cal1Dname: in .ini file  {}".format(
+            self.cal1Dfn
         )
 
         with h5py.File(self.cal1Dfn, "r") as f:
@@ -376,17 +362,13 @@ class Cam:
             ra = ra.T
             dec = dec.T
         if self.fliplr:
-            logging.debug(
-                "flipping horizontally cam #{} az/el/ra/dec data.".format(self.name)
-            )
+            logging.debug("flipping horizontally cam #{} az/el/ra/dec data.".format(self.name))
             az = np.fliplr(az)
             el = np.fliplr(el)
             ra = np.fliplr(ra)
             dec = np.fliplr(dec)
         if self.flipud:
-            logging.debug(
-                "flipping vertically cam #{} az/el/ra/dec data.".format(self.name)
-            )
+            logging.debug("flipping vertically cam #{} az/el/ra/dec data.".format(self.name))
             az = np.flipud(az)
             el = np.flipud(el)
             ra = np.flipud(ra)
@@ -409,11 +391,7 @@ class Cam:
             and self.debiasData is not None
             and np.isfinite(self.debiasData)
         ):
-            logging.debug(
-                "Debiasing Data for Camera #{} by -{}".format(
-                    self.name, self.debiasData
-                )
-            )
+            logging.debug("Debiasing Data for Camera #{} by -{}".format(self.name, self.debiasData))
             data -= self.debiasData
         return data
 
@@ -431,9 +409,7 @@ class Cam:
             self.dnoise = dnoise  # diagnostic
 
         if self.ccdbias:
-            logging.info(
-                "adding bias {:.1f} to camera #{}".format(self.ccdbias, self.name)
-            )
+            logging.info("adding bias {:.1f} to camera #{}".format(self.ccdbias, self.name))
             noisy += self.ccdbias
 
         # %% diagnostic quantities
@@ -443,9 +419,7 @@ class Cam:
         return noisy
 
     def dosmooth(self, data):
-        assert np.isfinite(data).all(), (
-            "NaN leaked into brightness data, savgol cannot handle NaN"
-        )
+        assert np.isfinite(data).all(), "NaN leaked into brightness data, savgol cannot handle NaN"
         try:
             if self.smoothspan > 0 and self.savgolOrder > 0:
                 logging.debug("Smoothing Data for Camera #{}".format(self.name))
@@ -459,9 +433,7 @@ class Cam:
         mask = data < 0
         if mask.sum() > 0.2 * self.ncutpix:
             logging.info(
-                "Setting {} negative Data values to 0 for Camera #{}".format(
-                    mask.sum(), self.name
-                )
+                "Setting {} negative Data values to 0 for Camera #{}".format(mask.sum(), self.name)
             )
 
         data[mask] = 0
@@ -503,9 +475,9 @@ class Cam:
         cutcol = np.arange(self.superx, dtype=int)
         # %% rows (y) to cut from picture
         cutrow = np.rint(np.polyval(polycoeff, cutcol)).astype(int)
-        assert (cutrow >= 0).all() and (cutrow < self.supery).all(), (
-            "impossible least squares fit for 1-D cut\n is your video orientation correct? check the params of video hdf5 file"
-        )
+        assert (cutrow >= 0).all() and (
+            cutrow < self.supery
+        ).all(), "impossible least squares fit for 1-D cut\n is your video orientation correct? check the params of video hdf5 file"
         # DONT DO THIS: cutrow.clip(0,self.supery,cutrow)
         # %% angle from magnetic zenith corresponding to those pixels
         radecMagzen = azel2radec(self.Baz, self.Bel, self.lat, self.lon, self.Bepoch)
@@ -584,8 +556,7 @@ class Cam:
 
         # %% dicard edge pixels
         mask = np.logical_not(
-            ((C == 0) | (C == self.az.shape[1] - 1))
-            | ((R == 0) | (R == self.az.shape[0] - 1))
+            ((C == 0) | (C == self.az.shape[1] - 1)) | ((R == 0) | (R == self.az.shape[0] - 1))
         )
 
         R = R[mask]

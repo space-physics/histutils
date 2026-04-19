@@ -50,9 +50,7 @@ def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
             else:
                 data[j, ...] = D
     # %% absolute time estimate, software timing (at your peril)
-    finf["ut1"] = frame2ut1(
-        params.get("startUTC"), params.get("kineticraw"), rawFrameInd
-    )
+    finf["ut1"] = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawFrameInd)
 
     return data, rawFrameInd, finf
 
@@ -100,9 +98,7 @@ def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
     fileSizeBytes = fn.stat().st_size
 
     if fileSizeBytes < finf["bytes_image"]:
-        raise ValueError(
-            f"File size {fileSizeBytes} is smaller than a single image frame!"
-        )
+        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame!")
 
     if fileSizeBytes % finf["bytes_frame"]:
         logging.error(
@@ -118,18 +114,14 @@ def whichframes(fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any]):
 
         nFrameRaw = last_frame - first_frame + 1
         if nFrameRaw != nFrame:
-            logging.warning(
-                f"there may be missed frames: nFrameRaw {nFrameRaw}   nFrame {nFrame}"
-            )
+            logging.warning(f"there may be missed frames: nFrameRaw {nFrameRaw}   nFrame {nFrame}")
     else:  # CMOS
         nFrame = last_frame - first_frame + 1
 
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
-    ut1_unix_all = frame2ut1(
-        params.get("startUTC"), params.get("kineticsec"), allrawframe
-    )
+    ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kineticsec"), allrawframe)
     # %% setup frame indices
     """
     if no requested frames were specified, read all frames. Otherwise, just

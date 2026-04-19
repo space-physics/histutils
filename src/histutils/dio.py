@@ -139,9 +139,7 @@ def vid2h5(
                 f"to {datetime.fromtimestamp(ut1[-1], timezone.utc)}"
             )
             if "ut1_unix" not in f:
-                fut1 = f.create_dataset(
-                    "/ut1_unix", shape=(N,), dtype=float, fletcher32=True
-                )
+                fut1 = f.create_dataset("/ut1_unix", shape=(N,), dtype=float, fletcher32=True)
                 fut1.attrs["units"] = "seconds since Unix epoch Jan 1 1970 midnight"
 
             f["/ut1_unix"][ind] = ut1
@@ -151,12 +149,8 @@ def vid2h5(
 
         if rawind is not None:
             if "rawind" not in f:
-                fri = f.create_dataset(
-                    "/rawind", shape=(N,), dtype=np.int64, fletcher32=True
-                )
-                fri.attrs["units"] = (
-                    "one-based index since camera program started this session"
-                )
+                fri = f.create_dataset("/rawind", shape=(N,), dtype=np.int64, fletcher32=True)
+                fri.attrs["units"] = "one-based index since camera program started this session"
 
             f["/rawind"][ind] = rawind
 
@@ -172,9 +166,7 @@ def vid2h5(
         if params.get("spoolfn"):
             # http://docs.h5py.org/en/latest/strings.html
             if "spoolfn" not in f:
-                fsp = f.create_dataset(
-                    "/spoolfn", shape=(N,), dtype=h5py.special_dtype(vlen=bytes)
-                )
+                fsp = f.create_dataset("/spoolfn", shape=(N,), dtype=h5py.special_dtype(vlen=bytes))
                 fsp.attrs["description"] = "input filename data was extracted from"
 
             f["/spoolfn"][ind] = params["spoolfn"].name
@@ -289,6 +281,4 @@ def setupimgh5(
         if cmdlog and isinstance(cmdlog, str):
             f["/cmdlog"] = cmdlog
     else:
-        raise TypeError(
-            f"{type(f)} is not correct, must be filename or h5py.File HDF5 file handle"
-        )
+        raise TypeError(f"{type(f)} is not correct, must be filename or h5py.File HDF5 file handle")

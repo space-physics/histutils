@@ -2,6 +2,7 @@
 """
 Convert raw DMCdata from 2013-04-11 to HDF5
 """
+from pathlib import Path
 
 import histutils.dio
 import histutils.rawDMCreader
@@ -18,7 +19,18 @@ params = {
     "header_bytes": 4,  # only 2011-era files have 0 header bytes.
     "xy_pixel": (512, 512),  # usually, but some files are 256x256.
     "xy_bin": (1, 1),  # usually, but some files are binned 2x2.
-          }
+    "kineticsec": None,
+    "rotccw": 0,
+    "transpose": False,
+    "flipud": False,
+    "fliplr": False,
+    "outfn": Path(outdir) / Path(fn).name.replace(".DMCdata", ".h5"),
+}
+
+if params["outfn"].is_file():
+    raise FileExistsError(
+        f"{params['outfn']} already exists. Please delete or move it before running this script."
+    )
 
 _, rawind, finf = histutils.rawDMCreader.read(fn, params)
 

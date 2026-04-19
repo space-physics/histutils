@@ -76,9 +76,7 @@ def getNeoParam(
     #                           BytesPerImage, BytesPerFrame, verbose)
     FrameIndRel = None
 
-    assert isinstance(FrameIndReq, int) or FrameIndReq is None, (
-        "TODO: add multi-frame request case"
-    )
+    assert isinstance(FrameIndReq, int) or FrameIndReq is None, "TODO: add multi-frame request case"
     rawFrameInd = np.arange(
         cmosinit["firstrawind"], cmosinit["lastrawind"] + 1, FrameIndReq, dtype=np.int64
     )

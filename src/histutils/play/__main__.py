@@ -72,9 +72,7 @@ if __name__ == "__main__":
         help="path / variable inside hdf5 file to image stack (default=rawimg)",
         default="rawimg",
     )
-    p.add_argument(
-        "-o", "--output", help="output new video file instead of playing back"
-    )
+    p.add_argument("-o", "--output", help="output new video file instead of playing back")
     p.add_argument(
         "-c",
         "--clim",

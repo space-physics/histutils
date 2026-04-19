@@ -9,9 +9,7 @@ from .plots import plotLOSecef
 from .camclass import Cam
 
 
-def get1Dcut(
-    cam: List[Cam], odir: Path | None = None, verbose: bool = False
-) -> List[Cam]:
+def get1Dcut(cam: List[Cam], odir: Path | None = None, verbose: bool = False) -> List[Cam]:
     """
     i.   get az/el of each pixel (rotated/transposed as appropriate)
     ii.  get cartesian ECEF of each pixel end, a point outside the grid (to create rays to check intersections with grid)

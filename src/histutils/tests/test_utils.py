@@ -21,9 +21,7 @@ def test_quota_too_small(tmp_path):
 
     test_fn = tmp_path / "fake_file"
 
-    too_small = max(
-        0, freeout - 9e9
-    )  # handles where drive already has less than 10 GB free
+    too_small = max(0, freeout - 9e9)  # handles where drive already has less than 10 GB free
     with pytest.raises(OSError):
         hu.write_quota(too_small, test_fn)
 

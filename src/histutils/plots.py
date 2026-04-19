@@ -60,9 +60,7 @@ def doPlayMovie(
         hIm.set_data(d)
         if ut1_unix is not None and rawFrameInd is not None:
             if titleut:
-                hT.set_text(
-                    f"UT1 estimate: {datetime.fromtimestamp(ut1_unix[i])}  RelFrame#: {i}"
-                )
+                hT.set_text(f"UT1 estimate: {datetime.fromtimestamp(ut1_unix[i])}  RelFrame#: {i}")
             else:
                 hT.set_text(f"RawFrame#: {rawFrameInd[i]} RelFrame# {i}")
         else:
@@ -220,9 +218,7 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
     fg = figure()
     ax = fg.gca()
     # NOTE do NOT use twinax() here, leads to incorrect conclusion based on different axes limits
-    ax.plot(
-        nC, nR, label="cam{} data".format(name), color="r", linestyle="none", marker="."
-    )
+    ax.plot(nC, nR, label="cam{} data".format(name), color="r", linestyle="none", marker=".")
     ax.plot(C, R, label="cam{} fit".format(name), linestyle="-")
 
     ax.legend()

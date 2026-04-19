@@ -113,12 +113,8 @@ if __name__ == "__main__":
         nargs=2,
         type=float,
     )
-    p.add_argument(
-        "-k", "--kineticsec", help="kinetic rate of camera (sec)  = 1/fps", type=float
-    )
-    p.add_argument(
-        "--rotccw", help="rotate CCW value in 90 deg. steps", type=int, default=0
-    )
+    p.add_argument("-k", "--kineticsec", help="kinetic rate of camera (sec)  = 1/fps", type=float)
+    p.add_argument("--rotccw", help="rotate CCW value in 90 deg. steps", type=int, default=0)
     p.add_argument("--transpose", help="transpose image", action="store_true")
     p.add_argument("--flipud", help="vertical flip", action="store_true")
     p.add_argument("--fliplr", help="horizontal flip", action="store_true")
@@ -135,9 +131,7 @@ if __name__ == "__main__":
         help="return the average of the requested frames, as a single image",
         action="store_true",
     )
-    p.add_argument(
-        "--hist", help="makes a histogram of all data frames", action="store_true"
-    )
+    p.add_argument("--hist", help="makes a histogram of all data frames", action="store_true")
     p.add_argument("-v", "--verbose", help="debugging", action="store_true")
     p.add_argument("--fire", help="fire filename")
     p.add_argument("-l", "--loc", help="lat lon alt_m of sensor", type=float, nargs=3)
