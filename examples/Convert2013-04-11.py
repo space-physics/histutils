@@ -6,21 +6,24 @@ from pathlib import Path
 from pprint import pprint
 
 import histutils.dio
+import histutils.index
 import histutils.rawDMCreader
 from histutils.hstxmlparse import xmlparam
 
 # path to the data. This will probably be distinct for your computer.
-fn = Path(
-    "~/Google Drive/My Drive/Data/PokerFlat/2013-04-11/hst/raw/2013-04-11T07-00-CamSer1387_frames_402209-1-403708.DMCdata"
-)
+data_path = Path("~/Library/CloudStorage/GoogleDrive-mhirsch@bu.edu/My Drive/Data/PokerFlat/2013-04-11/hst/raw").expanduser()
+
+fn = data_path / "2013-04-11T07-00-CamSer1387_frames_402209-1-403708.DMCdata"
+
+
+ut1Req = ("2013-04-11T07:00:00Z", "2013-04-11T07:00:05Z")
+# UTC time range to extract, in ISO format
 
 # where to store the converted data
 outdir = Path("./").expanduser()
 
 outfn = outdir / fn.name.replace(".DMCdata", ".h5")
-xmlfn = Path(
-    "~/Google Drive/My Drive/Data/PokerFlat/2013-04-11/hst/raw/2013-04-11T07-00-CamSer1387.xml"
-).expanduser()
+xmlfn = data_path / "2013-04-11T07-00-CamSer1387.xml"
 
 x = xmlparam(xmlfn)
 
@@ -36,6 +39,8 @@ params = {
     "flipud": False,  # flip up down
     "fliplr": False,  # flip left right
 }
+fInfo = histutils.rawDMCreader.getDMCparam(fn, params)
+params.update(fInfo)
 
 pprint(params)
 
@@ -44,6 +49,7 @@ if outfn.is_file():
         f"{outfn} already exists. Please delete or move it before running this script."
     )
 
-_, rawind, finf = histutils.rawDMCreader.read(fn, params, outfn)
+i0, iend = histutils.index.getRawInd(fn, params)
+print(f"first raw frame index: {i0}, last raw frame index: {iend}")
 
-histutils.dio.vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, outfn=outfn, params=params)
+histutils.dio.vid2h5(fn, ut1=ut1Req, rawind=(i0, iend), outfn=outfn, params=params)

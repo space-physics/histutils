@@ -11,8 +11,6 @@ import numpy as np
 import typing as T
 
 #
-from .utils import write_quota
-from .dio import imgwriteincr, setupimgh5
 from .index import getRawInd, meta2rawInd, req2frame
 from .timedmc import frame2ut1, ut12frame
 
@@ -21,39 +19,29 @@ BPP = 16  # bits per pixel
 # NHEADBYTES = 4
 
 
-def read(infn: str | Path, params: dict[str, T.Any], outfn: str | Path | None = None) -> tuple:
+def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
     """
-    if outfn is a path string, write to file,
-    otherwise return data as variable - the variable can be very large.
+    return data as variable - the variable can be very large.
     """
 
     fn = Path(infn).expanduser()
     # %% setup data parameters
     # preallocate *** LABVIEW USES ROW-MAJOR ORDERING C ORDER
     finf = getDMCparam(fn, params)
-    write_quota(finf["bytes_frame"] * finf["nframeextract"], outfn)
 
     rawFrameInd = np.zeros(finf["nframeextract"], dtype=np.int64)
     # %% output (variable or file)
-    if outfn:
-        outfn = Path(outfn).expanduser()
-        setupimgh5(outfn, finf)
-        data = np.ndarray([])
-    else:
-        data = np.zeros(
-            (finf["nframeextract"], finf["super_y"], finf["super_x"]),
-            dtype=np.uint16,
-            order="C",
-        )
+    data = np.zeros(
+        (finf["nframeextract"], finf["super_y"], finf["super_x"]),
+        dtype=np.uint16,
+        order="C",
+    )
     # %% read
     with fn.open("rb") as fid:
         # j and i are NOT the same in general when not starting from beginning of file!
         for j, i in enumerate(finf["frameindrel"]):
             D, rawFrameInd[j] = getDMCframe(fid, i, finf)
-            if outfn:
-                imgwriteincr(outfn, D, j)
-            else:
-                data[j, ...] = D
+            data[j, ...] = D
     # %% absolute time estimate, software timing (at your peril)
     finf["ut1"] = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawFrameInd)
 

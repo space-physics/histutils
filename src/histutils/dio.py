@@ -2,8 +2,10 @@ from pathlib import Path
 import numpy as np
 import h5py
 from typing import Any
-from datetime import datetime, timezone
-import logging
+from datetime import datetime
+
+from .timedmc import frame2ut1
+from .rawDMCreader import getDMCframe
 
 
 def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path:
@@ -71,19 +73,27 @@ def imgwriteincr(fn: Path, imgs, imgslice: int | slice):
 
 
 def vid2h5(
-    data,
+    inFile: Path | str,
     *,
     ut1,
     rawind,
-    ticks,
+    ticks=None,
     outfn: Path,
     params: dict[str, Any],
     i: int = 0,
     Nfile: int = 1,
-    det=None,
-    tstart=None,
     cmdlog: str | None = None,
-):
+) -> None:
+    """
+    convert .DMCdata raw image to compressed Image format HDF5 file
+
+    Parameters
+    ----------
+
+    rawind: int array
+        one-based index since camera program started this session, for each image frame
+    """
+    inFile = Path(inFile).expanduser().resolve(strict=True)
 
     outfn = Path(outfn).expanduser()
     if outfn.is_dir():
@@ -112,69 +122,28 @@ def vid2h5(
     else:
         writemode = "w"
 
-    if data is not None:
-        params["nframeextract"] = data.shape[0] * Nfile
-        params["super_y"] = data.shape[1]
-        params["super_x"] = data.shape[2]
-        ind = slice(i * data.shape[0], (i + 1) * data.shape[0])
-    else:  # FIXME haven't reevaluated for update only case
-        for q in (ut1, rawind, ticks):
-            if q is not None:
-                N = len(q)
-                break
-        ind = slice(None)
+    tStart = datetime.fromisoformat(ut1[0])
+    tEnd = datetime.fromisoformat(ut1[-1])
 
+    print(f"writing {outfn} from {tStart} to {tEnd}")
+
+    tUTC = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawind)
+
+    NframeExtract = rawind[1] - rawind[0] + 1
+
+#%% Convert raw DMCdata to HDF5, frame by frame to save RAM
     with h5py.File(outfn, writemode) as f:
-        if data is not None:
-            if "rawimg" not in f:  # first run
-                setupimgh5(f, params)
+#%% initialize datasets and attributes
+        if "header" not in f and params.get("header"):
+            f["/header"] = str(params["header"])
 
-            f["/rawimg"][ind, ...] = data
+        if "hdf5version" not in f:
+            f["/hdf5version"] = h5py.version.hdf5_version_tuple
 
-        if ut1 is not None:
-            print(
-                f"writing from {datetime.fromtimestamp(ut1[0], timezone.utc)}"
-                f"to {datetime.fromtimestamp(ut1[-1], timezone.utc)}"
-            )
-            if "ut1_unix" not in f:
-                fut1 = f.create_dataset("/ut1_unix", shape=(N,), dtype=float, fletcher32=True)
-                fut1.attrs["units"] = "seconds since Unix epoch Jan 1 1970 midnight"
-
-            f["/ut1_unix"][ind] = ut1
-
-        if tstart is not None and "tstart" not in f:
-            f["/tstart"] = tstart
-
-        if rawind is not None:
-            if "rawind" not in f:
-                fri = f.create_dataset("/rawind", shape=(N,), dtype=np.int64, fletcher32=True)
-                fri.attrs["units"] = "one-based index since camera program started this session"
-
-            f["/rawind"][ind] = rawind
-
-        if ticks is not None:
-            if "ticks" not in f:
-                ftk = f.create_dataset(
-                    "/ticks", shape=(N,), dtype=np.uint64, fletcher32=True
-                )  # Uint64
-                ftk.attrs["units"] = "FPGA tick counter for each image frame"
-
-            f["/ticks"][ind] = ticks
-
-        if params.get("spoolfn"):
-            # http://docs.h5py.org/en/latest/strings.html
-            if "spoolfn" not in f:
-                fsp = f.create_dataset("/spoolfn", shape=(N,), dtype=h5py.special_dtype(vlen=bytes))
-                fsp.attrs["description"] = "input filename data was extracted from"
-
-            f["/spoolfn"][ind] = params["spoolfn"].name
-
-        if det is not None:
-            if "detect" not in f:
-                fdt = f.create_dataset("/detect", shape=(N,), dtype=int)
-                fdt.attrs["description"] = "# of auroral detections this frame"
-
-            f["/detect"][i] = det[i]
+        if "cmdlog" not in f:
+            if isinstance(cmdlog, (tuple, list)):
+                cmdlog = " ".join(cmdlog)
+            f["/cmdlog"] = str(cmdlog)
 
         if "params" not in f:
             cparam = np.array(
@@ -195,35 +164,57 @@ def vid2h5(
                     ("questionable_ut1", "i1"),
                 ],
             )
-
-            # cannot use fletcher32 here, typeerror
+            # cannot use fletcher32 here, Typeerror
             f.create_dataset("/params", data=cparam)
 
         if "sensorloc" not in f and params.get("sensorloc"):
             loc = params["sensorloc"]
-            try:
-                lparam = np.array(
-                    (loc[0], loc[1], loc[2]),
-                    dtype=[("lat", "f8"), ("lon", "f8"), ("alt_m", "f8")],
-                )
+            lparam = np.array(
+                (loc[0], loc[1], loc[2]),
+                dtype=[("lat", "f8"), ("lon", "f8"), ("alt_m", "f8")],
+            )
 
-                # cannot use fletcher32 here, typeerror
-                Ld = f.create_dataset("/sensorloc", data=lparam)
-                Ld.attrs["units"] = "WGS-84 lat (deg),lon (deg), altitude (meters)"
-            except (IndexError, TypeError) as e:
-                logging.error(f"could not write sensor position {e}")
+            # cannot use fletcher32 here, Typeerror
+            Ld = f.create_dataset("/sensorloc", data=lparam)
+            Ld.attrs["units"] = "WGS-84 lat (deg),lon (deg), altitude (meters)"
 
-        if "cmdlog" not in f:
-            if isinstance(cmdlog, (tuple, list)):
-                cmdlog = " ".join(cmdlog)
-            # cannot use fletcher32 here, typeerror
-            f["/cmdlog"] = str(cmdlog)
+        if rawind is not None:
+            if "rawind" not in f:  # first pass
+                fri = f.create_dataset("/rawind", shape=(NframeExtract,), dtype=np.int64, fletcher32=True)
+                fri.attrs["units"] = "one-based index since camera program started this session"
 
-        if "header" not in f and params.get("header"):
-            f["/header"] = str(params["header"])
+        if "rawimg" not in f:  # first pass
+            setupimgh5(f, params)
 
-        if "hdf5version" not in f:
-            f["/hdf5version"] = h5py.version.hdf5_version_tuple
+        if "ut1_unix" not in f:  # first pass
+            fut1 = f.create_dataset("/ut1_unix", shape=(NframeExtract,), dtype=float, fletcher32=True)
+            fut1.attrs["units"] = "seconds since Unix epoch Jan 1 1970 midnight"
+
+        if ticks is not None:
+            if "ticks" not in f:
+                ftk = f.create_dataset("/ticks", shape=(NframeExtract,), dtype=np.uint64, fletcher32=True)
+                ftk.attrs["units"] = "FPGA tick counter for each image frame"
+
+        if params.get("spoolfn"):
+            # http://docs.h5py.org/en/latest/strings.html
+            if "spoolfn" not in f:
+                fsp = f.create_dataset("/spoolfn", shape=(NframeExtract,), dtype=h5py.special_dtype(vlen=bytes))
+                fsp.attrs["description"] = "input filename data was extracted from"
+
+        with inFile.open("rb") as fid:
+            # j and i are NOT the same in general when not starting from beginning of file!
+            for j, i in enumerate(params["frameindrel"]):
+                imgFrame, rawFrameInd = getDMCframe(fid, i, params)
+
+                f["/rawimg"][j, ...] = imgFrame
+                f["/rawind"][j] = rawFrameInd
+                f["/ut1_unix"][j] = tUTC[j].timestamp()
+
+                if ticks is not None:
+                    f["/ticks"][j] = ticks[j]
+
+                if params.get("spoolfn"):
+                    f["/spoolfn"][j] = params["spoolfn"][j].name
 
 
 def setupimgh5(
