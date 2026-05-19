@@ -7,7 +7,9 @@ HiST project raw video data reading utilities.
 ## Install
 
 ```sh
-python -m pip install -e .
+https://github.com/space-physics/histutils
+
+python -m pip install -e ./histuils
 ```
 
 ## User Programs/Scripts
