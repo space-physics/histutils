@@ -7,6 +7,7 @@ from pprint import pprint
 
 import histutils.dio
 import histutils.index
+import histutils.timedmc
 import histutils.rawDMCreader
 from histutils.hstxmlparse import xmlparam
 
@@ -24,6 +25,7 @@ outdir = Path("./").expanduser()
 
 outfn = outdir / fn.name.replace(".DMCdata", ".h5")
 xmlfn = data_path / "2013-04-11T07-00-CamSer1387.xml"
+nmeafn = xmlfn.with_suffix(".nmea")
 
 x = xmlparam(xmlfn)
 
@@ -39,6 +41,10 @@ params = {
     "flipud": False,  # flip up down
     "fliplr": False,  # flip left right
 }
+
+gpsInfo = histutils.timedmc.parse_gprmc(nmeafn)
+params["startUTC"] = gpsInfo
+
 fInfo = histutils.rawDMCreader.getDMCparam(fn, params)
 params.update(fInfo)
 

@@ -128,7 +128,7 @@ def vid2h5(
     print(f"writing {outfn} from {tStart} to {tEnd}")
 
     tUTC = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawind)
-
+    breakpoint()
     NframeExtract = rawind[1] - rawind[0] + 1
 
 #%% Convert raw DMCdata to HDF5, frame by frame to save RAM

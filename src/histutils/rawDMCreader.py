@@ -86,6 +86,10 @@ def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
 def whichframes(
     fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any], outfn: Path | None = None
 ):
+    """
+    Computes the frame indices to extract from the .DMCdata file, based on the requested time range or frame range.
+    These are frame indices relative to the first frame in the file, and are used for indexing into the raw data.
+    """
 
     if not fn.is_file():
         raise FileNotFoundError(fn)
@@ -93,7 +97,7 @@ def whichframes(
     fileSizeBytes = fn.stat().st_size
 
     if fileSizeBytes < finf["bytes_image"]:
-        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame!")
+        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame.")
 
     if fileSizeBytes % finf["bytes_frame"]:
         logging.error(
@@ -116,6 +120,7 @@ def whichframes(
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
+    breakpoint()
     ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kineticsec"), allrawframe)
     # %% setup frame indices
     """
@@ -124,6 +129,7 @@ def whichframes(
     Assignments have to be "int64", not just python "int".
     Windows python 2.7 64-bit on files >2.1GB, the bytes will wrap
     """
+    breakpoint()
     FrameIndRel = ut12frame(
         params.get("ut1req"), np.arange(0, nFrame, 1, dtype=np.int64), ut1_unix_all
     )
