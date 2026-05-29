@@ -1,14 +1,11 @@
-#!/usr/bin/env python
-from pathlib import Path
+import importlib.resources as ir
 import numpy as np
 
 from histutils.rawDMCreader import read
 
-R = Path(__file__).parent
-
 
 def test_rawread():
-    bigfn = R / "testframes.DMCdata"
+    bigfn = ir.files(__package__) / "testframes.DMCdata"
 
     params = {
         "xy_pixel": (512, 512),
@@ -17,7 +14,7 @@ def test_rawread():
         "header_bytes": 4,
     }
 
-    testframe, testind, finf = read(bigfn, params)
+    testframe, testind, _ = read(bigfn, params)
 
     # these are both tested by read
     # finf = getDMCparam(bigfn,(512,512),(1,1),None,verbose=2)

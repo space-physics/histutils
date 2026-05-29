@@ -9,7 +9,7 @@ import importlib.resources as ir
 
 
 def test_xmlparse():
-    fn = ir.files("histutils.tests") / "testframes.xml"
+    fn = ir.files(__package__) / "testframes.xml"
     params = xmlparam(fn)
 
     assert params["binning"] == 1
@@ -26,7 +26,7 @@ def test_quota_too_small(tmp_path):
         hu.write_quota(too_small, test_fn)
 
     with pytest.raises(ValueError):
-        hu.write_quota(-1, test_fn)
+        hu.write_quota(0, test_fn)
 
 
 def test_quota_ok(tmp_path):
@@ -34,6 +34,6 @@ def test_quota_ok(tmp_path):
     test_fn = tmp_path / "fake_file"
 
     if freeout > 10e9:
-        assert hu.write_quota(0, test_fn) == freeout
+        assert hu.write_quota(1, test_fn) == approx(freeout)
     else:
         pytest.skip("not enough free space")

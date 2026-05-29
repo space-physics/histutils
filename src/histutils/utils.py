@@ -16,8 +16,8 @@ def write_quota(outbytes: int, outfn: str | Path | None, limitGB: float = 10e9) 
 
     freeout = shutil.disk_usage(outfn.parent).free
 
-    if outbytes < 0:
-        raise ValueError("cannot write less than 0 bytes!")
+    if outbytes <= 0:
+        raise ValueError(f"Expected strictly positive number of bytes to write, got {outbytes}.")
 
     if (freeout - outbytes) < limitGB:
         raise OSError(
