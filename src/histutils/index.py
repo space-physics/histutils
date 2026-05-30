@@ -5,14 +5,19 @@ from struct import pack, unpack
 
 
 def getRawInd(fn: Path, finf: dict[str, int]) -> tuple[int, int]:
+    """
+    get the first and last raw image video frame indices from .DMCdata file
 
-    if not fn.is_file():
-        raise FileNotFoundError(fn)
+    finf is composed from getDMCparam and experiment-specific parameters.
+    """
 
     if not isinstance(finf["nmetadata"], int):
         raise TypeError(finf["nmetadata"])
 
     if finf["nmetadata"] < 1:  # no header, only raw images
+        if not fn.is_file():
+            raise FileNotFoundError(fn)
+
         fileSizeBytes = fn.stat().st_size
         if fileSizeBytes % finf["bytes_image"]:
             logging.error(f"{fn} may not be read correctly, mismatch frame->file size")

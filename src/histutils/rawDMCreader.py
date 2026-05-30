@@ -11,8 +11,6 @@ import numpy as np
 import typing as T
 
 #
-from .utils import write_quota
-from .dio import imgwriteincr, setupimgh5
 from .index import getRawInd, meta2rawInd, req2frame
 from .timedmc import frame2ut1, ut12frame
 
@@ -21,54 +19,44 @@ BPP = 16  # bits per pixel
 # NHEADBYTES = 4
 
 
-def read(infn: str | Path, params: dict[str, T.Any], outfn: str | Path | None = None) -> tuple:
+def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
     """
-    if outfn is a path string, write to file,
-    otherwise return data as variable - the variable can be very large.
+    return data as variable - the variable can be very large.
     """
 
     fn = Path(infn).expanduser()
     # %% setup data parameters
     # preallocate *** LABVIEW USES ROW-MAJOR ORDERING C ORDER
     finf = getDMCparam(fn, params)
-    write_quota(finf["bytes_frame"] * finf["nframeextract"], outfn)
 
     rawFrameInd = np.zeros(finf["nframeextract"], dtype=np.int64)
-    # %% output (variable or file)
-    if outfn:
-        outfn = Path(outfn).expanduser()
-        setupimgh5(outfn, finf)
-        data = np.ndarray([])
-    else:
-        data = np.zeros(
-            (finf["nframeextract"], finf["super_y"], finf["super_x"]),
-            dtype=np.uint16,
-            order="C",
-        )
-    # %% read
+    # %% output (variable or file) - script should fail here if inadequate RAM
+    data = np.zeros(
+        (finf["nframeextract"], finf["super_y"], finf["super_x"]),
+        dtype=np.uint16,
+        order="C",
+    )
+    # %% read image stack to NDarray
     with fn.open("rb") as fid:
         # j and i are NOT the same in general when not starting from beginning of file!
         for j, i in enumerate(finf["frameindrel"]):
             D, rawFrameInd[j] = getDMCframe(fid, i, finf)
-            if outfn:
-                imgwriteincr(outfn, D, j)
-            else:
-                data[j, ...] = D
-    # %% absolute time estimate, software timing (at your peril)
-    finf["ut1"] = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawFrameInd)
+            data[j, ...] = D
+    # %% absolute time estimate, software timing
+    finf["ut1"] = frame2ut1(params["startUTC"], params["kineticsec"], rawFrameInd)
 
     return data, rawFrameInd, finf
 
 
 def getDMCparam(fn: Path, params: dict[str, T.Any]) -> dict[str, T.Any]:
     """
-    nHeadBytes=4 for 2013-2016 data
-    nHeadBytes=0 for 2011 data
+    header_bytes=4 for 2013-2016 data
+    header_bytes=0 for 2011 data
     """
     finf = {
         "nmetadata": params["header_bytes"] // 2,
         "header_bytes": params["header_bytes"],
-    }  # FIXME for DMCdata version 1 only
+    }
 
     # int() in case we are fed a float or int
     finf["super_x"] = int(params["xy_pixel"][0] // params["xy_bin"][0])
@@ -98,6 +86,10 @@ def howbig(params: dict[str, T.Any], finf: dict[str, T.Any]) -> dict[str, int]:
 def whichframes(
     fn: Path, params: dict[str, T.Any], finf: dict[str, T.Any], outfn: Path | None = None
 ):
+    """
+    Computes the frame indices to extract from the .DMCdata file, based on the requested time range or frame range.
+    These are frame indices relative to the first frame in the file, and are used for indexing into the raw data.
+    """
 
     if not fn.is_file():
         raise FileNotFoundError(fn)
@@ -105,7 +97,7 @@ def whichframes(
     fileSizeBytes = fn.stat().st_size
 
     if fileSizeBytes < finf["bytes_image"]:
-        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame!")
+        raise ValueError(f"File size {fileSizeBytes} is smaller than a single image frame.")
 
     if fileSizeBytes % finf["bytes_frame"]:
         logging.error(
@@ -128,7 +120,7 @@ def whichframes(
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
-    ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kineticsec"), allrawframe)
+    ut1_unix_all = frame2ut1(params["startUTC"], params["kineticsec"], allrawframe)
     # %% setup frame indices
     """
     if no requested frames were specified, read all frames. Otherwise, just

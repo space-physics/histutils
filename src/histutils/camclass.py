@@ -209,10 +209,10 @@ class Cam:
 
                     p = f["/params"]
                     self.kineticsec = p["kineticsec"]
-                    self.rotccw = p["rotccw"]
-                    self.transpose = p["transpose"] == 1
-                    self.fliplr = p["fliplr"] == 1
-                    self.flipud = p["flipud"] == 1
+                    self.rotccw = p.get("rotccw", 0)
+                    self.transpose = p.get("transpose", False)
+                    self.fliplr = p.get("fliplr", False)
+                    self.flipud = p.get("flipud", False)
 
                     c = f["/sensorloc"]
                     self.lat = c["lat"].item()

@@ -68,6 +68,7 @@ These examples are old, now we use HDF5 files. Kept for reference only.
 ### Read .DMCdata file from within a Python script
 
 ```sh
-from histutils import rawDMCreader
-data = rawDMCreader.read('myfile.DMCdata')[0]
+import histutils.rawDMCreader as hstr
+
+data = hstr.read('myfile.DMCdata')[0]
 ```

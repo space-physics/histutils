@@ -16,7 +16,8 @@ classifiers = [
 ]
 dependencies = [
 	"numpy",
-	"h5py"
+	"h5py",
+	"xarray"
 ]
 dynamic = ["readme", "version"]
 
@@ -35,5 +36,5 @@ line-length = 100
 [tool.mypy]
 files = ["."]
 install_types = true
-exclude = ["^build([/\\\\]|$)"]
+exclude = ["^build([/\\\\]|$)", "^archive([/\\\\]|$)"]
 ignore_missing_imports = true
