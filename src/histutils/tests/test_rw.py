@@ -1,22 +1,26 @@
 import importlib.resources as ir
+import functools
+
+from pytest import approx
 import h5py
 import numpy as np
 
 from histutils.rawDMCreader import read, getDMCparam, frame2ut1
 from histutils.dio import vid2h5
-from histutils.index import getRawInd
+from histutils.index import get_raw_index
 from histutils.hstxmlparse import xmlparam
-from histutils.timedmc import parse_gprmc, iso_to_epoch
+from histutils.timedmc import parse_gprmc
 
 
 # dummy test parameters
+@functools.cache
 def get_params() -> tuple:
 
     with ir.path(__package__, "testframes.DMCdata") as rawfn:
         x = xmlparam(rawfn.with_suffix(".xml"))
 
         params = {
-            "kineticsec": x["kineticrate"],
+            "kinetic_sec": x["kineticrate"],
             "xy_pixel": (x["horizpixels"], x["vertpixels"]),
             "xy_bin": (x["binning"], x["binning"]),
             "header_bytes": 4,
@@ -34,6 +38,14 @@ def get_params() -> tuple:
         params.update(fInfo)
 
         return rawfn, params
+
+
+def test_raw_index():
+    rawfn, params = get_params()
+
+    i0, iend = get_raw_index(rawfn, params["Nmeta"], params["image_bytes"])
+    assert i0 == 710730
+    assert iend == 710731
 
 
 def test_raw_read():
@@ -56,13 +68,11 @@ def test_raw_read():
 def test_convert_range(tmp_path):
     rawfn, params = get_params()
 
-    tReq = ("2013-04-11T10:43:34.6648", "2013-04-11T10:43:34.6837")
-    tUnix = iso_to_epoch(tReq[0]), iso_to_epoch(tReq[1])
-    assert tUnix == (1365677014.6648, 1365677014.6837)  # sanity check
+    tReq = (np.datetime64("2013-04-11T10:43:34.6648"), np.datetime64("2013-04-11T10:43:34.6837"))
 
     outfn = tmp_path / "testframes.h5"
 
-    i0, iend = getRawInd(rawfn, params)
+    i0, iend = get_raw_index(rawfn, params["Nmeta"], params["image_bytes"])
     print(f"first raw frame index: {i0}, last raw frame index: {iend}")
 
     assert i0 == 710730
@@ -70,15 +80,21 @@ def test_convert_range(tmp_path):
 
     iraw = np.arange(i0, iend + 1)
 
-    tUTC = frame2ut1(params["startUTC"], params["kineticsec"], iraw)
+    tUTC = frame2ut1(params["startUTC"], params["kinetic_sec"], iraw)
     # 1365677014.6648664 datetime(2013, 4, 11, 10, 43, 34, 664866)
-    # 1365677014.683734  datetime(2013, 4, 11, 10, 43, 34, 683734)
+    # 1365677014.6837339 datetime(2013, 4, 11, 10, 43, 34, 683734)
+    print(f"file UTC: {tUTC[0]} to {tUTC[-1]}  startUTC: {params['startUTC']} kinetic_sec: {params['kinetic_sec']}")
+    assert tUTC[0] == approx(np.datetime64("2013-04-11T10:43:34.6648664"))
+    assert tUTC[-1] == approx(np.datetime64("2013-04-11T10:43:34.6837339"))
 
-    i = (tUTC >= tUnix[0]) & (tUTC < tUnix[1])
+    i = (tUTC >= tReq[0]) & (tUTC < tReq[1])
 
     iraw = iraw[i]
-    params["frameindrel"] = params["frameindrel"][i]
-    params["nframeextract"] = iraw.size
+
+    print(f"requested time range corresponds to {i.sum()} frames {iraw}")
+
+    params["i_rel"] = params["i_rel"][i]
+    params["Nframe_extract"] = iraw.size
     assert iraw.size == 1
 
     vid2h5(rawfn, outfn, iraw, params)
@@ -97,7 +113,7 @@ def test_convert_all(tmp_path):
 
     outfn = tmp_path / "testframes.h5"
 
-    i0, iend = getRawInd(rawfn, params)
+    i0, iend = get_raw_index(rawfn, params["Nmeta"], params["image_bytes"])
     print(f"first raw frame index: {i0}, last raw frame index: {iend}")
 
     assert i0 == 710730

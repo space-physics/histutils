@@ -5,7 +5,7 @@ and we need int64 for large files
 """
 
 from .utils import splitconf, write_quota, sixteen2eight
-from .index import req2frame, getRawInd, meta2rawInd
+from .index import req2frame, get_raw_index, meta2rawInd
 from .dio import setupimgh5
 
 __all__ = [
@@ -13,9 +13,9 @@ __all__ = [
     "write_quota",
     "sixteen2eight",
     "req2frame",
-    "getRawInd",
+    "get_raw_index",
     "meta2rawInd",
     "setupimgh5",
 ]
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

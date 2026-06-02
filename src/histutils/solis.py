@@ -10,14 +10,13 @@ except ImportError:
 
 from astropy.io import fits
 
-from .rawDMCreader import howbig
 from .timedmc import frame2ut1
 
 
 def getNeoParam(
     fn: Path,
     FrameIndReq=None,
-    kineticsec=None,
+    kinetic_sec=None,
     startUTC=None,
     cmosinit: dict | None = None,
 ):
@@ -42,7 +41,7 @@ def getNeoParam(
                 cmosinit = {"firstrawind": 1, "lastrawind": len(f)}
         case ".fits":
             with fits.open(fn, mode="readonly", memmap=False) as f:
-                kineticsec = f[0].header["KCT"]
+                kinetic_sec = f[0].header["KCT"]
                 # TODO start of night's recording (with some Solis versionss)
                 startseries = datetime.fromisoformat(f[0].header["DATE"] + "Z")
 
@@ -65,9 +64,7 @@ def getNeoParam(
             startUTC = startseries.timestamp()
 
     # %% FrameInd relative to this file
-    finf = {"super_x": X, "super_y": Y}
-    params = {"header_bytes": nHeadBytes}
-    PixelsPerImage, BytesPerImage, BytesPerFrame = howbig(params, finf)
+    finf = {"xy_actual": (X, Y), "header_bytes": nHeadBytes}
 
     raise NotImplementedError("This function needs to have API updated")
 
@@ -84,13 +81,13 @@ def getNeoParam(
     finf = {
         "superx": X,
         "supery": Y,
-        "nframeextract": FrameIndRel.size,
+        "Nframe_extract": FrameIndRel.size,
         "nframe": rawFrameInd.size,
-        "frameindrel": FrameIndRel,
+        "i_rel": FrameIndRel,
         "frameind": rawFrameInd,
-        "kineticsec": kineticsec,
+        "kinetic_sec": kinetic_sec,
     }
     # %% absolute frame timing (software, yikes)
-    finf["ut1"] = frame2ut1(startUTC, kineticsec, rawFrameInd)
+    finf["ut1"] = frame2ut1(startUTC, kinetic_sec, rawFrameInd)
 
     return finf

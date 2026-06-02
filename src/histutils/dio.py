@@ -1,13 +1,11 @@
 from pathlib import Path
-from typing import Any
-from datetime import datetime
 
 import numpy as np
 import numpy.typing as npt
 import h5py
 
-from .timedmc import frame2ut1
-from .rawDMCreader import getDMCframe
+from .timedmc import frame2ut1, datetime64_to_epoch
+from .rawDMCreader import getDMCframe, DMCFileInfo
 
 
 def dir2fn(ofn: Path, ifn: Path, suffix: str = ".h5") -> Path:
@@ -76,7 +74,7 @@ def vid2h5(
     inFile: Path | str,
     outFile: Path | str,
     rawind: npt.NDArray[np.integer],
-    params: dict[str, Any],
+    params,
     *,
     ticks: npt.NDArray[np.integer] | None = None,
     i: int = 0,
@@ -113,8 +111,8 @@ def vid2h5(
 
     # if line wraps (>80 characters), this in-place update breaks.
     txtupd = f"converting {inFile} "
-    if params.get("spoolfn"):
-        txtupd += f"convert file {i + 1} / {Nfile}  {params['spoolfn'].name}"
+    if params.get("spool_file"):
+        txtupd += f"convert file {i + 1} / {Nfile}  {params['spool_file'].name}"
     txtupd += f" => {outFile}"
     print(txtupd + "\r", end="")
     # %% saving
@@ -127,7 +125,7 @@ def vid2h5(
     # NOTE write mode r+ to not overwrite incremental images
     writemode = "r+" if outFile.is_file() else "w"
 
-    tUTC = frame2ut1(params["startUTC"], params["kineticsec"], rawind)
+    tUTC = frame2ut1(params["startUTC"], params["kinetic_sec"], rawind)
 
     print(f"writing {outFile} from {tUTC[0]} to {tUTC[-1]}")
 
@@ -145,9 +143,6 @@ def vid2h5(
     # %% Convert raw DMCdata to HDF5, frame by frame to save RAM
     with h5py.File(outFile, writemode) as f:
         # %% initialize datasets and attributes
-        if "header" not in f and "header" in params:
-            f["/header"] = str(params["header"])
-
         if "hdf5version" not in f:
             f["/hdf5version"] = h5py.version.hdf5_version_tuple
 
@@ -159,7 +154,7 @@ def vid2h5(
         if "params" not in f:
             cparam = np.array(
                 (
-                    params["kineticsec"],
+                    params["kinetic_sec"],
                     params["rotccw"],
                     params["transpose"],
                     params["flipud"],
@@ -167,7 +162,7 @@ def vid2h5(
                     1,
                 ),
                 dtype=[
-                    ("kineticsec", "f8"),
+                    ("kinetic_sec", "f8"),
                     ("rotccw", "i1"),
                     ("transpose", "i1"),
                     ("flipud", "i1"),
@@ -178,15 +173,15 @@ def vid2h5(
             # cannot use fletcher32 here, Typeerror
             f.create_dataset("/params", data=cparam)
 
-        if "sensorloc" not in f and "sensorloc" in params:
-            loc = params["sensorloc"]
+        if "sensor_lla" not in f and "sensor_lla" in params:
+            loc = params["sensor_lla"]
             lparam = np.array(
                 (loc[0], loc[1], loc[2]),
                 dtype=[("lat", "f8"), ("lon", "f8"), ("alt_m", "f8")],
             )
 
             # cannot use fletcher32 here, Typeerror
-            Ld = f.create_dataset("/sensorloc", data=lparam)
+            Ld = f.create_dataset("/sensor_lla", data=lparam)
             Ld.attrs["units"] = "WGS-84 lat (deg),lon (deg), altitude (meters)"
 
         if rawind is not None:
@@ -212,9 +207,9 @@ def vid2h5(
                 )
                 ftk.attrs["units"] = "FPGA tick counter for each image frame"
 
-        if params.get("spoolfn"):
+        if params.get("spool_file"):
             # http://docs.h5py.org/en/latest/strings.html
-            if "spoolfn" not in f:
+            if "spool_file" not in f:
                 fsp = f.create_dataset(
                     "/spoolfn", shape=(NframeExtract,), dtype=h5py.special_dtype(vlen=bytes)
                 )
@@ -222,7 +217,7 @@ def vid2h5(
 
         with inFile.open("rb") as fid:
             # j and i are NOT the same in general when not starting from beginning of file!
-            for j, i in enumerate(params["frameindrel"]):
+            for j, i in enumerate(params["i_rel"]):
                 if j and not (j % 10):
                     print(f"writing frame {j} of {NframeExtract} to {outFile}\r", end="")
 
@@ -230,18 +225,20 @@ def vid2h5(
 
                 f["/rawimg"][j, ...] = imgFrame
                 f["/rawind"][j] = rawFrameInd
-                f["/ut1_unix"][j] = tUTC[j]
+
+                f["/ut1_unix"][j] = datetime64_to_epoch(tUTC[j])
+                # datetime64 to unix epoch time
 
                 if ticks is not None:
                     f["/ticks"][j] = ticks[j]
 
-                if params.get("spoolfn"):
-                    f["/spoolfn"][j] = params["spoolfn"][j].name
+                if params.get("spool_file"):
+                    f["/spoolfn"][j] = params["spool_file"].name
 
 
 def setupimgh5(
     f: Path | h5py.File,
-    params: dict[str, int],
+    params: DMCFileInfo,
     *,
     dtype=np.uint16,
     writemode: str = "r+",
@@ -269,13 +266,11 @@ def setupimgh5(
             setupimgh5(F, params, dtype=dtype, writemode=writemode, key=key)
 
     elif isinstance(f, h5py.File):
-        Nrow, Ncol = params["super_y"], params["super_x"]
-
         h = f.create_dataset(
             key,
-            shape=(params["nframeextract"], Nrow, Ncol),
+            shape=(params["Nframe_extract"], *params["xy_actual"]),
             dtype=dtype,
-            chunks=(1, Nrow, Ncol),  # each image is a chunk
+            chunks=(1, *params["xy_actual"]),  # each image is a chunk
             compression="gzip",
             # no difference in filesize from 1 to 5, except much faster to use lower numbers!
             compression_opts=1,

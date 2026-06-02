@@ -1,18 +1,15 @@
-"""
-Estimates time of DMC frames using GPS NMEA GPRMC sentences, when they exist.
-
-We use UT1 Unix epoch time instead of datetime, since we are working with HDF5 and also need to do fast comparisons
-
-Outputs:
---------
-    UT1_unix:   double-precision float (64-bit) estimate of frame exposure START
-"""
-
 from pathlib import Path
 from datetime import datetime, timezone
 
 import numpy as np
 import numpy.typing as npt
+
+__all__ = [
+    "parse_gprmc",
+    "datetime64_to_epoch",
+    "frame2ut1",
+    "ut12frame",
+]
 
 
 def parse_gprmc(nmea_file: Path | str) -> datetime:
@@ -59,102 +56,45 @@ def parse_gprmc(nmea_file: Path | str) -> datetime:
     return dt
 
 
-def iso_to_epoch(iso_time: str) -> float:
-    dt = datetime.fromisoformat(iso_time)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    else:
-        dt = dt.astimezone(timezone.utc)
-    return dt.timestamp()
+def datetime64_to_epoch(t: np.datetime64 | npt.NDArray[np.datetime64]) -> npt.NDArray[np.floating]:
+    return t.astype("M8[ms]").astype(np.float64) / 1000.0
 
 
 def frame2ut1(
-    tstart, kineticsec: float, rawind: npt.NDArray[np.integer]
-) -> npt.NDArray[np.float64]:
+    tstart: np.datetime64, kinetic_sec: float, rawind: npt.NDArray[np.integer]
+) -> npt.NDArray[np.datetime64]:
     """
-    Use this function for a software-only estimate of time.
-
-    units: seconds since Jan 1, 1970, midnight
+    Use this function for an estimate of image time.
 
     rawind-1 because camera is one-based indexing
     """
+    if not isinstance(tstart, np.datetime64):
+        tstart = np.datetime64(tstart)
 
-    return datetime2unix(tstart)[0] + (rawind - 1) * kineticsec
+    rawind = np.asarray(rawind)
+
+    assert (
+        rawind >= 1
+    ).all(), "rawind should be one-based indexing since camera program started this session"
+
+    return tstart + (rawind - 1) * np.timedelta64(int(kinetic_sec * 1e9), "ns")
 
 
-def ut12frame(treq, ind, ut1_unix):
+def ut12frame(treq: npt.NDArray[np.datetime64], ind: npt.NDArray[np.integer], ut1: npt.NDArray[np.datetime64]):
     """
     Given treq, output index(ces) to extract via rawDMCreader
-    treq: scalar or vector of ut1_unix time (seconds since Jan 1, 1970)
-    ind: zero-based frame index corresponding to ut1_unix, corresponding to input data file.
-    """
-    if treq is None:  # have to do this since interp1 will return last index otherwise
-        return None
-
-    treq = np.atleast_1d(treq)
-    # %% handle human specified string scalar case
-    if treq.size == 1:
-        treq = datetime2unix(treq[0])
-    # %% handle time range case
-    elif treq.size == 2:
-        tstartreq = datetime2unix(treq[0])
-        tendreq = datetime2unix(treq[1])
-        treq = ut1_unix[(ut1_unix > tstartreq) & (ut1_unix < tendreq)]
-    else:  # otherwise, it's a vector of requested values
-        treq = datetime2unix(treq)
-    # %% get indices
-    """
+    treq: numpy.datetime64
+        requested times
+    ind: zero-based file frame index corresponding to ut1, corresponding to input data file.
+    ut1: numpy.datetime64
+        absolute time estimate for each frame in the file, corresponding to input data file.
     We use nearest neighbor interpolation to pick a frame index for each requested time.
     """
-    framereq = np.rint(np.interp(treq, ut1_unix, ind)).astype(np.int64)
-    framereq = framereq[framereq >= 0]  # discard outside time limits
+    fReq = datetime64_to_epoch(treq)
+    fUT1 = datetime64_to_epoch(ut1)
+
+    framereq = np.rint(np.interp(fReq, fUT1, ind)).astype(np.int64)
+    # discard outside time limits
+    framereq = framereq[framereq >= 0]
 
     return framereq
-
-
-def datetime2unix(T) -> npt.NDArray[np.float64]:
-    """
-    converts datetime to UT1 unix epoch time
-
-    Returns
-    -------
-
-    numpy.ndarray of float, shape (N,) where N is the number of input datetimes
-        UT1 unix epoch time in seconds since Jan 1, 1970 midnight
-    """
-    T = np.atleast_1d(T)
-
-    ut1_unix = np.empty(T.shape, dtype=float)
-    for i, t in enumerate(T):
-        match t:
-            case datetime():
-                pass
-            case np.datetime64():
-                t = t.astype("datetime64[ms]").astype(datetime)
-            case str():
-                t = datetime.fromisoformat(t)
-            case float():
-                return T
-            case int():
-                return T.astype(float)
-            case _:
-                raise TypeError("Expecting datetime or parsable date string")
-
-        if t.tzinfo is None:
-            t = t.replace(tzinfo=timezone.utc)
-        else:
-            t = t.astimezone(timezone.utc)
-
-        # ut1 seconds since unix epoch, need [] for error case
-        ut1_unix[i] = t.timestamp()
-
-    return ut1_unix
-
-
-def firetime(tstart, Tfire):
-    """Highly accurate sub-millisecond absolute timing based on GPSDO 1PPS and camera fire feedback.
-    Right now we have some piecemeal methods to do this, and it's time to make it industrial strength
-    code.
-
-    """
-    raise NotImplementedError("Yes this is a priority, would you like to volunteer?")

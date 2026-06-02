@@ -6,8 +6,10 @@ Playback or convert to end-user friendly video contained in HDF5 file
 """
 
 from pathlib import Path
+
 import h5py
 import numpy as np
+import numpy.typing as npt
 
 from ..utils import sixteen2eight
 from ..plots import doPlayMovie
@@ -18,15 +20,16 @@ def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: tuple[int, int]):
 
     with h5py.File(h5fn, "r") as f:
         data = f[imgh5]
+        ut1: npt.NDArray[np.datetime64] | None
         try:
-            ut1_unix = f["/ut1_unix"]
+            ut1 = np.asarray(f["/ut1_unix"][:], dtype="datetime64[s]")
         except KeyError:
-            ut1_unix = None
+            ut1 = None
 
         if outfn:
             hdf2video(data, outfn, clim)
         else:
-            doPlayMovie(data, 0.1, ut1_unix=ut1_unix, clim=clim)
+            doPlayMovie(data, 0.1, ut1=ut1, clim=clim)
 
 
 def hdf2video(data, outfn: Path, clim: tuple[int, int]):

@@ -75,7 +75,7 @@ def getmulticam(flist, tstartstop, framereq, cpar, odir, cals, cmdlog=""):
     for i, c in enumerate(cals):
         cam.append(Cam(sim, cpar, i, calfn=c))
 
-    sim.kineticsec = min([C.kineticsec for C in cam])  # playback only, arbitrary
+    sim.kinetic_sec = min([C.kinetic_sec for C in cam])  # playback only, arbitrary
     # %% extract data
     if hasattr(sim, "pbInd"):  # one camera, specified indices
         cam[0].pbInd = sim.pbInd

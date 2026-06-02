@@ -1,7 +1,7 @@
-#!/usr/bin/env python
 from pathlib import Path
-from numpy import uint16, diff, gradient
-from datetime import datetime
+
+import numpy as np
+import numpy.typing as npt
 
 try:
     import simplekml as skml
@@ -20,7 +20,7 @@ from pymap3d import ecef2geodetic
 def doPlayMovie(
     data,
     playMovie: float | None,
-    ut1_unix: list[int] | None = None,
+    ut1: npt.NDArray[np.datetime64] | None = None,
     rawFrameInd: list[int] | None = None,
     clim: tuple[int, int] | None = None,
 ) -> None:
@@ -51,16 +51,16 @@ def doPlayMovie(
     hAx.set_xlabel("x-pixels")
     hAx.set_ylabel("y-pixels")
 
-    if ut1_unix is not None:
+    if ut1 is not None:
         titleut = True
     else:
         titleut = False
 
     for i, d in enumerate(data):
         hIm.set_data(d)
-        if ut1_unix is not None and rawFrameInd is not None:
+        if ut1 is not None and rawFrameInd is not None:
             if titleut:
-                hT.set_text(f"UT1 estimate: {datetime.fromtimestamp(ut1_unix[i])}  RelFrame#: {i}")
+                hT.set_text(f"UT1: {ut1[i]}  RelFrame#: {i}")
             else:
                 hT.set_text(f"RawFrame#: {rawFrameInd[i]} RelFrame# {i}")
         else:

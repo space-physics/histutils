@@ -62,7 +62,7 @@ def HSTsync(sim, cam, verbose):
     based on the "simulated" UTC times that do not necessarily correspond exactly
     with either camera.
     """
-    tall = arange(mutualStart, mutualStop, sim.kineticsec)
+    tall = arange(mutualStart, mutualStop, sim.kinetic_sec)
 
     logging.info(
         f"{tall.size} mutual frames available "

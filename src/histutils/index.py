@@ -1,49 +1,48 @@
 from pathlib import Path
-import numpy as np
-import logging
 from struct import pack, unpack
 
+import numpy as np
+import numpy.typing as npt
 
-def getRawInd(fn: Path, finf: dict[str, int]) -> tuple[int, int]:
+
+def get_raw_index(fn: Path, Nmeta: int, image_bytes: int) -> tuple[int, int]:
     """
     get the first and last raw image video frame indices from .DMCdata file
+    The data format writes an image frame, then one-based frame index.
+    The end of the file is the last image frame index.
 
-    finf is composed from getDMCparam and experiment-specific parameters.
+    Nmeta: int
+      number of metadata entries per frame.
     """
 
-    if not isinstance(finf["nmetadata"], int):
-        raise TypeError(finf["nmetadata"])
+    if Nmeta < 1:
+        # %% 2011 old files, no header, only raw images
+        file_bytes = fn.stat().st_size
+        if file_bytes % image_bytes:
+            raise ValueError(f"{fn} mismatch frame->file size")
 
-    if finf["nmetadata"] < 1:  # no header, only raw images
-        if not fn.is_file():
-            raise FileNotFoundError(fn)
-
-        fileSizeBytes = fn.stat().st_size
-        if fileSizeBytes % finf["bytes_image"]:
-            logging.error(f"{fn} may not be read correctly, mismatch frame->file size")
-
-        firstRawIndex = 1  # definition, one-based indexing
-        lastRawIndex = fileSizeBytes // finf["bytes_image"]
-    else:  # normal case 2013-2016
-        # gets first and last raw indices from a big .DMCdata file
+        iStart = 1  # definition, one-based indexing
+        iEnd = file_bytes // image_bytes
+    else:
+        # %% DMC / HiST 2013-2016
         with fn.open("rb") as f:
-            f.seek(finf["bytes_image"], 0)  # get first raw frame index
-            firstRawIndex = meta2rawInd(f, finf["nmetadata"])
+            f.seek(image_bytes, 0)
+            iStart = meta2rawInd(f, Nmeta)
 
-            if firstRawIndex < 1:
-                raise ValueError(firstRawIndex)
-            if firstRawIndex > 100_000_000:
-                logging.error(f"first index seems impossibly large {firstRawIndex}")
-            # %%
-            f.seek(-finf["header_bytes"], 2)  # get last raw frame index
-            lastRawIndex = meta2rawInd(f, finf["nmetadata"])
+            if iStart < 1:
+                raise ValueError(f"first index must be at least one, got {iStart}")
+            if iStart > 100_000_000:
+                raise ValueError(f"first index seems impossibly large: {iStart}")
+            # %% end frame
+            f.seek(-Nmeta * 2, 2)
+            iEnd = meta2rawInd(f, Nmeta)
 
-            if lastRawIndex < 1:
-                raise ValueError(lastRawIndex)
-            if lastRawIndex > 100_000_000:
-                logging.error(f"last index seems impossibly large {lastRawIndex}")
+            if iEnd < 1:
+                raise ValueError(f"last index must be at least one, got {iEnd}")
+            if iEnd > 100_000_000:
+                raise ValueError(f"last index seems impossibly large: {iEnd}")
 
-    return firstRawIndex, lastRawIndex
+    return iStart, iEnd
 
 
 def meta2rawInd(f, Nmetadata: int) -> int:
@@ -59,7 +58,7 @@ def meta2rawInd(f, Nmetadata: int) -> int:
     return rawind
 
 
-def req2frame(req: list[int] | None, N: int = 0):
+def req2frame(req: list[int] | None, N: int = 0) -> npt.NDArray[np.integer]:
     """
     output has to be numpy.arange for > comparison
     """

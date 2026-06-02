@@ -26,7 +26,6 @@ import logging
 
 #
 from ..dio import dir2fn, vid2h5
-from ..rawDMCreader import read
 
 
 def convert_files(p: dict):
@@ -35,7 +34,7 @@ def convert_files(p: dict):
     """
 
     params = {
-        "kineticsec": p["kineticsec"],
+        "kinetic_sec": p["kinetic_sec"],
         "rotccw": p["rotccw"],
         "transpose": p["transpose"],
         "flipud": p["flipud"],
@@ -46,7 +45,6 @@ def convert_files(p: dict):
         "header_bytes": p["headerbytes"],
         "xy_pixel": p["pix"],
         "xy_bin": p["bin"],
-        "frame_request": p["frames"],
     }
 
     # %% find file(s) user specified
@@ -96,14 +94,6 @@ if __name__ == "__main__":
         default=(1, 1),
         type=int,
     )
-    p.add_argument(
-        "-f",
-        "--frames",
-        help="frame indices of file (not raw)",
-        nargs=3,
-        metavar=("start", "stop", "stride"),
-        type=int,
-    )  # don't use string
     p.add_argument("-m", "--movie", help="seconds per frame. ", type=float)
     p.add_argument(
         "-c",
@@ -112,7 +102,7 @@ if __name__ == "__main__":
         nargs=2,
         type=float,
     )
-    p.add_argument("-k", "--kineticsec", help="kinetic rate of camera (sec)  = 1/fps", type=float)
+    p.add_argument("-k", "--kinetic_sec", help="kinetic rate of camera (sec)  = 1/fps", type=float)
     p.add_argument("--rotccw", help="rotate CCW value in 90 deg. steps", type=int, default=0)
     p.add_argument("--transpose", help="transpose image", action="store_true")
     p.add_argument("--flipud", help="vertical flip", action="store_true")

@@ -9,9 +9,9 @@ from typing import Any
 from pprint import pprint
 import numpy as np
 
-from ..timedmc import parse_gprmc, iso_to_epoch
+from ..timedmc import parse_gprmc
 from ..rawDMCreader import getDMCparam
-from ..index import getRawInd
+from ..index import get_raw_index
 from ..dio import vid2h5, frame2ut1
 from ..hstxmlparse import xmlparam
 
@@ -20,7 +20,7 @@ def convert_DMC_to_hdf5(
     rawFile: Path,
     outFile: Path,
     params: dict[str, Any],
-    tReq: tuple[str, str] | None = None,
+    tReq: tuple[np.datetime64, np.datetime64] | None = None,
 ) -> None:
     """
     converts .DMCdata files to .h5 files, with metadata
@@ -39,8 +39,8 @@ def convert_DMC_to_hdf5(
     params["xy_pixel"] = (x["horizpixels"], x["vertpixels"])
     params["xy_bin"] = (x["binning"], x["binning"])
 
-    if params.get("kineticsec") is None:
-        params["kineticsec"] = x["kineticrate"]
+    if params.get("kinetic_sec") is None:
+        params["kinetic_sec"] = x["kineticrate"]
 
     fInfo = getDMCparam(rawFile, params)
     params.update(fInfo)
@@ -52,15 +52,15 @@ def convert_DMC_to_hdf5(
             f"{outFile} already exists. Please delete or move it before running this script."
         )
 
-    i0, iend = getRawInd(rawFile, params)
+    i0, iend = get_raw_index(rawFile, params["Nmeta"], params["image_bytes"])
     print(f"first raw frame index: {i0}, last raw frame index: {iend}")
     iraw = np.arange(i0, iend + 1)
 
-    tUTC = frame2ut1(params["startUTC"], params["kineticsec"], iraw)
+    tUTC = frame2ut1(params["startUTC"], params["kinetic_sec"], iraw)
     print(f"raw frames cover {tUTC[0]} to {tUTC[-1]}")
 
     if tReq is not None:
-        i = (tUTC >= iso_to_epoch(tReq[0])) & (tUTC <= iso_to_epoch(tReq[1]))
+        i = (tUTC >= tReq[0]) & (tUTC <= tReq[1])
         iraw = iraw[i]
 
     vid2h5(rawFile, outFile, rawind=iraw, params=params)
@@ -97,4 +97,7 @@ def parse_cli() -> Namespace:
 
 if __name__ == "__main__":
     args = parse_cli()
-    convert_DMC_to_hdf5(Path(args.rawfile), Path(args.outfile), params=vars(args), tReq=args.ut1)
+    tReq = None
+    if args.ut1 is not None:
+        tReq = (np.datetime64(args.ut1[0]), np.datetime64(args.ut1[1]))
+    convert_DMC_to_hdf5(Path(args.rawfile), Path(args.outfile), params=vars(args), tReq=tReq)

@@ -1,19 +1,19 @@
 from pathlib import Path
 import logging
-import numpy as np
-from numpy.testing import assert_allclose
+import typing as T
 from datetime import datetime, timezone
+
 from scipy.signal import savgol_filter
 from numpy.random import poisson
+import numpy as np
+from numpy.testing import assert_allclose
 import h5py
 import xarray
-import typing as T
 
 from . import splitconf
-from .timedmc import datetime2unix
 from pymap3d import azel2radec, aer2ecef
 from pymap3d.haversine import anglesep
-import dascutils.io as dio
+import dascutils.io as dascio
 from themisasi.fov import mergefov
 import themisasi
 from .plots import plotnear_rc, plotlsq_rc
@@ -73,7 +73,7 @@ class Cam:
                 self.clim[1] = splitconf(cp, "plotMaxVal", ci)
             # %% store az,el calibration data
             if self.name.startswith("dasc"):
-                dasc = dio.loadcal(cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci])
+                dasc = dascio.loadcal(cp["azcalfn"].split(",")[ci], cp["elcalfn"].split(",")[ci])
             elif self.name.startswith("themis"):
                 themis = themisasi.loadcal(cp["azcalfn"].split(",")[ci])
             else:
@@ -182,33 +182,34 @@ class Cam:
             data: xarray.Dataset
 
             if self.name.startswith("dasc"):
-                data = dio.load(self.fn)
+                data = dascio.load(self.fn)
                 self.lat = data.lat
                 self.lon = data.lon
                 self.alt_m = data.alt_m
-                self.ut1unix = datetime2unix(data.time.values.astype(datetime))
+                self.ut1unix = data.time.values
             elif self.name.startswith("themis"):
                 data = themisasi.load(self.fn)
                 self.lat = data.lat
                 self.lon = data.lon
                 self.alt_m = data.alt_m
-                self.ut1unix = datetime2unix(data.time.values.astype(datetime))
+                self.ut1unix = data.time.values
             # legacy data including HiST  (should use xarray to convert instead)
             elif self.fn.suffix == ".h5":
                 assert self.fn.is_file(), f"{self.fn} does not exist"
                 """timing, parameter wrangling  FIXME someday use xarray.Dataset. convert/save data with xarray instead of h5py"""
                 with h5py.File(self.fn, "r") as f:
                     # time of each frame in entire video
-                    self.ut1unix = f["/ut1_unix"][:]
+                    # epoch to datetime64
+                    self.ut1unix = np.datetime64(f["/ut1_unix"][:], "s")
                     try:
-                        self.ut1unix += self.timeShiftSec
+                        self.ut1unix += np.timedelta64(int(self.timeShiftSec * 1e9), "ns")
                     except TypeError:
                         pass
 
                     self.supery, self.superx = f["/rawimg"].shape[1:]
 
                     p = f["/params"]
-                    self.kineticsec = p["kineticsec"]
+                    self.kinetic_sec = p["kinetic_sec"]
                     self.rotccw = p.get("rotccw", 0)
                     self.transpose = p.get("transpose", False)
                     self.fliplr = p.get("fliplr", False)
@@ -222,7 +223,7 @@ class Cam:
                 raise OSError(f"I am not sure how to work with the data for {self.name}")
 
         elif not sim.realdata:  # sim ONLY
-            self.kineticsec = splitconf(cp, "kineticsec", ci)  # simulation
+            self.kinetic_sec = splitconf(cp, "kinetic_sec", ci)  # simulation
             # no fallback, must specify z-location of each cam
             self.alt_m = splitconf(cp, "zkm", ci) * 1000
 
@@ -253,7 +254,7 @@ class Cam:
         """
         try:
             if self.pedn is not None:
-                self.dn2intens = self.pedn / (self.kineticsec * self.pixarea_sqcm * self.ampgain)
+                self.dn2intens = self.pedn / (self.kinetic_sec * self.pixarea_sqcm * self.ampgain)
                 if sim.realdata:
                     self.intens2dn = 1.0
                 else:
@@ -268,8 +269,8 @@ class Cam:
 
             logging.info(
                 f"Camera {self.name} start/stop UTC:"
-                f"{datetime.fromtimestamp(self.ut1unix[0], timezone.utc)} / "
-                f"{datetime.fromtimestamp(self.ut1unix[-1], timezone.utc)}  "
+                f"{self.ut1unix[0]} / "
+                f"{self.ut1unix[-1]}  "
                 f"{self.ut1unix.size} frames."
             )
 

@@ -28,7 +28,7 @@ rawfn = in_path / "2013-04-11T07-00-CamSer1387_frames_402209-1-403708.DMCdata"
 # to
 # 2013‑04‑11T10:44:21.339319Z
 
-tReq = ("2013-04-11T10:43:35", "2013-04-11T10:44:00")
+tReq = np.array([np.datetime64("2013-04-11T10:43:35"), np.datetime64("2013-04-11T10:44:00")])
 # UTC time range to extract, in ISO format
 # if omitted, convert whole file, which is general can be 100+ Gigabyte
 
@@ -47,7 +47,7 @@ params = {
     "header_bytes": 4,  # only 2011-era files have 0 header_bytes. Newer have 4 header_bytes.
     "xy_pixel": (x["horizpixels"], x["vertpixels"]),
     "xy_bin": (x["binning"], x["binning"]),
-    "kineticsec": x["kineticrate"],
+    "kinetic_sec": x["kineticrate"],
     "rotccw": 0,  # counter clockwise rotation in degrees
     "transpose": False,
     "flipud": False,  # flip up down
@@ -55,7 +55,7 @@ params = {
 }
 
 gpsInfo = hstt.parse_gprmc(nmeafn)
-params["startUTC"] = gpsInfo
+params["startUTC"] = np.datetime64(gpsInfo)
 
 fInfo = histutils.rawDMCreader.getDMCparam(rawfn, params)
 params.update(fInfo)
@@ -67,14 +67,14 @@ if outFile.is_file():
         f"{outFile} already exists. Please delete or move it before running this script."
     )
 
-i0, iend = histutils.index.getRawInd(rawfn, params)
+i0, iend = histutils.index.get_raw_index(rawfn, params["Nmeta"], params["image_bytes"])
 print(f"first raw frame index: {i0}, last raw frame index: {iend}")
 iraw = np.arange(i0, iend + 1)
 
-tUTC = histutils.dio.frame2ut1(params["startUTC"], params["kineticsec"], iraw)
+tUTC = histutils.dio.frame2ut1(params["startUTC"], params["kinetic_sec"], iraw)
 print(f"raw frames cover {tUTC[0]} to {tUTC[-1]}")
 
-i = (tUTC >= hstt.iso_to_epoch(tReq[0])) & (tUTC <= hstt.iso_to_epoch(tReq[1]))
+i = (tUTC >= tReq[0]) & (tUTC <= tReq[1])
 ireq = iraw[i]
 
 histutils.dio.vid2h5(rawfn, outFile, rawind=ireq, params=params)
