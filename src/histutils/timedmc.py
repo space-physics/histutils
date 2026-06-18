@@ -77,7 +77,12 @@ def frame2ut1(
         rawind >= 1
     ).all(), "rawind should be one-based indexing since camera program started this session"
 
-    return tstart + (rawind - 1) * np.timedelta64(int(kinetic_sec * 1e9), "ns")
+    # Compute absolute offsets then round to 100 ns ticks to avoid cumulative
+    # quantization drift and stabilize float edge cases across platforms.
+    dt_ns = np.rint((rawind - 1) * kinetic_sec * 1_000_000_000)
+    dt_ns = ((dt_ns + 50) // 100) * 100
+
+    return tstart + dt_ns.astype("timedelta64[ns]")
 
 
 def ut12frame(treq: npt.NDArray[np.datetime64], ind: npt.NDArray[np.integer], ut1: npt.NDArray[np.datetime64]):
