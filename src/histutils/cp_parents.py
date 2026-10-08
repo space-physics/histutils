@@ -1,13 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from pathlib import Path
-from typing import Union
 import shutil
 
 
-def cp_parents(files, target_dir: Union[str, Path]):
+def cp_parents(files, target_dir: str | Path):
     """
-    This function requires Python >= 3.6.
-
     This acts like bash cp --parents in Python
     inspiration from
     http://stackoverflow.com/questions/15329223/copy-a-file-into-a-directory-with-its-original-leading-directories-appended

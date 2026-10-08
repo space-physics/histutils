@@ -7,7 +7,6 @@ from scipy.signal import savgol_filter
 from numpy.random import poisson
 import h5py
 import xarray
-import typing as T
 
 from . import splitconf
 from .timedmc import datetime2unix
@@ -32,7 +31,7 @@ class Cam:
         name: str,
         zmax=None,
         xreq=None,
-        makeplot: T.List[str] | None = None,
+        makeplot: list[str] | None = None,
         calfn: Path | None = None,
         verbose: int = 0,
     ) -> None:
@@ -59,7 +58,7 @@ class Cam:
         self.r2pts: float
         self.xpix: int
 
-        self.name: T.Union[int, str]
+        self.name: int | str
         try:  # integer name
             self.name = int(name)
         except ValueError:  # non-integer name
@@ -142,7 +141,7 @@ class Cam:
         self.arbfov = splitconf(cp, "FOVdeg", ci)
         # %% sky mapping
         if calfn:
-            self.cal1Dfn: T.Union[None, Path] = calfn
+            self.cal1Dfn: Path | None = calfn
         else:
             try:
                 cal1Ddir = sim.rootdir / sim.cal1dpath

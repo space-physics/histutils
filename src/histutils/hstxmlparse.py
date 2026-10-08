@@ -5,10 +5,10 @@ retrieve parameters from HiST .DMCdata experiment .xml files
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 
-def xmlparam(fn: str | Path) -> Dict[str, Any]:
+def xmlparam(fn: str | Path) -> dict[str, Any]:
     """
     reads necessary camera parameters into dict
 
@@ -38,7 +38,7 @@ def xmlparam(fn: str | Path) -> Dict[str, Any]:
 
     data = children[1]
 
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
 
     diter = data.iter()
     for el in diter:
