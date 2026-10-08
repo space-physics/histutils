@@ -11,7 +11,6 @@ import typing as T
 import math
 
 import numpy as np
-import numpy.typing as npt
 
 from .index import get_raw_index, meta2rawInd, req2frame
 from .timedmc import frame2ut1, ut12frame
@@ -104,7 +103,7 @@ def getDMCparam(fn: Path, params: dict[str, T.Any]) -> DMCFileInfo:
     return finf
 
 
-def whichframes(fn: Path, params: dict[str, T.Any]) -> npt.NDArray[np.integer]:
+def whichframes(fn: Path, params: dict[str, T.Any]):
     """
     Computes the frame indices to extract from the .DMCdata file, based on the requested time range or frame range.
     These are frame indices relative to the first frame in the file, and are used for indexing into the raw data.
@@ -139,7 +138,7 @@ def whichframes(fn: Path, params: dict[str, T.Any]) -> npt.NDArray[np.integer]:
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
-    ut1_unix_all = frame2ut1(params["startUTC"], params["kinetic_sec"], allrawframe)
+    ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kinetic_sec"), allrawframe)
     # %% setup frame indices
     """
     if no requested frames were specified, read all frames.
@@ -147,7 +146,7 @@ def whichframes(fn: Path, params: dict[str, T.Any]) -> npt.NDArray[np.integer]:
     Assignments have to be "int64", not just python "int", because Windows
         Python 2.7 64-bit on files >2.1GB, the bytes will wrap
     """
-    i_rel: npt.NDArray[np.integer] | None = None
+    i_rel = None
     if "ut1req" in params:
         i_rel = ut12frame(params["ut1req"], np.arange(0, nFrame, 1, dtype=np.int64), ut1_unix_all)
 

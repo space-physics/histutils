@@ -2,7 +2,6 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 import numpy as np
-import numpy.typing as npt
 
 __all__ = [
     "parse_gprmc",
@@ -56,18 +55,21 @@ def parse_gprmc(nmea_file: Path | str) -> datetime:
     return dt
 
 
-def datetime64_to_epoch(t: np.datetime64 | npt.NDArray[np.datetime64]) -> npt.NDArray[np.floating]:
+def datetime64_to_epoch(t: np.datetime64):
     return t.astype("M8[ms]").astype(np.float64) / 1000.0
 
 
 def frame2ut1(
-    tstart: np.datetime64, kinetic_sec: float, rawind: npt.NDArray[np.integer]
-) -> npt.NDArray[np.datetime64]:
+    tstart: np.datetime64 | None, kinetic_sec: float | None, rawind
+):
     """
     Use this function for an estimate of image time.
 
     rawind-1 because camera is one-based indexing
     """
+    if tstart is None or kinetic_sec is None:
+        return None
+
     if not isinstance(tstart, np.datetime64):
         tstart = np.datetime64(tstart)
 
@@ -85,7 +87,7 @@ def frame2ut1(
     return tstart + dt_ns.astype("timedelta64[ns]")
 
 
-def ut12frame(treq: npt.NDArray[np.datetime64], ind: npt.NDArray[np.integer], ut1: npt.NDArray[np.datetime64]):
+def ut12frame(treq, ind, ut1):
     """
     Given treq, output index(ces) to extract via rawDMCreader
     treq: numpy.datetime64
@@ -95,6 +97,9 @@ def ut12frame(treq: npt.NDArray[np.datetime64], ind: npt.NDArray[np.integer], ut
         absolute time estimate for each frame in the file, corresponding to input data file.
     We use nearest neighbor interpolation to pick a frame index for each requested time.
     """
+    if ut1 is None:
+        return None
+
     fReq = datetime64_to_epoch(treq)
     fUT1 = datetime64_to_epoch(ut1)
 

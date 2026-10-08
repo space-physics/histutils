@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
 import h5py
 
 from .timedmc import frame2ut1, datetime64_to_epoch
@@ -73,10 +72,10 @@ def imgwriteincr(fn: Path, imgs, imgslice: int | slice):
 def vid2h5(
     inFile: Path | str,
     outFile: Path | str,
-    rawind: npt.NDArray[np.integer],
+    rawind,
     params,
     *,
-    ticks: npt.NDArray[np.integer] | None = None,
+    ticks = None,
     i: int = 0,
     Nfile: int = 1,
     cmdlog: str | None = None,
@@ -127,7 +126,8 @@ def vid2h5(
 
     tUTC = frame2ut1(params["startUTC"], params["kinetic_sec"], rawind)
 
-    print(f"writing {outFile} from {tUTC[0]} to {tUTC[-1]}")
+    if tUTC is not None:
+        print(f"writing {outFile} from {tUTC[0]} to {tUTC[-1]}")
 
     NframeExtract = rawind[-1] - rawind[0] + 1
 

@@ -2,7 +2,6 @@ from pathlib import Path
 from struct import pack, unpack
 
 import numpy as np
-import numpy.typing as npt
 
 
 def get_raw_index(fn: Path, Nmeta: int, image_bytes: int) -> tuple[int, int]:
@@ -58,7 +57,7 @@ def meta2rawInd(f, Nmetadata: int) -> int:
     return rawind
 
 
-def req2frame(req: list[int] | None, N: int = 0) -> npt.NDArray[np.integer]:
+def req2frame(req: list[int] | None, N: int = 0):
     """
     output has to be numpy.arange for > comparison
     """

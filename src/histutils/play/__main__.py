@@ -9,7 +9,6 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-import numpy.typing as npt
 
 from ..utils import sixteen2eight
 from ..plots import doPlayMovie
@@ -20,7 +19,6 @@ def playh5movie(h5fn: Path, imgh5: str, outfn: Path, clim: tuple[int, int]):
 
     with h5py.File(h5fn, "r") as f:
         data = f[imgh5]
-        ut1: npt.NDArray[np.datetime64] | None
         try:
             ut1 = np.asarray(f["/ut1_unix"][:], dtype="datetime64[s]")
         except KeyError:

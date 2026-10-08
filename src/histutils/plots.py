@@ -1,7 +1,5 @@
 from pathlib import Path
-
 import numpy as np
-import numpy.typing as npt
 
 try:
     import simplekml as skml
@@ -20,7 +18,7 @@ from pymap3d import ecef2geodetic
 def doPlayMovie(
     data,
     playMovie: float | None,
-    ut1: npt.NDArray[np.datetime64] | None = None,
+    ut1 = None,
     rawFrameInd: list[int] | None = None,
     clim: tuple[int, int] | None = None,
 ) -> None:
@@ -101,7 +99,7 @@ def doplotsave(bigfn, data, rawind, clim, dohist, meanImg):
 
     if meanImg:
         # DO NOT use dtype= here, it messes up internal calculation!
-        meanStack = data.mean(axis=0).astype(uint16)
+        meanStack = data.mean(axis=0).astype(np.uint16)
         fg = figure(32)
         ax = fg.gca()
         if clim:
@@ -232,7 +230,7 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
         print(f"saving {ofn}")
         fg.savefig(ofn, bbox_inches="tight")
     # %% ra/dec
-    fg = figure
+    fg = figure()
     axs = fg.subplots(2, 1, sharex=True)
     fg.suptitle("camera {} ra/dec extracted".format(name))
 
@@ -242,7 +240,7 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
     ax.autoscale(True, "x", True)
 
     ax2 = ax.twinx()
-    ax2.plot(diff(ra), color="r")
+    ax2.plot(np.diff(ra), color="r")
     ax2.set_ylabel("diff(ra)", color="r")
     for tl in ax2.get_yticklabels():
         tl.set_color("r")
@@ -252,7 +250,7 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
     ax.set_ylabel("decl.")
 
     ax2 = ax.twinx()
-    ax2.plot(diff(dec), color="r")
+    ax2.plot(np.diff(dec), color="r")
     ax2.set_ylabel("diff(dec)", color="r")
     for tl in ax2.get_yticklabels():
         tl.set_color("r")
@@ -273,12 +271,12 @@ def plotlsq_rc(nR, nC, R, C, ra, dec, angle, name, odir):
     ax.set_title(r"angle from magnetic zenith $\theta$")
 
     ax = axs[1]
-    dAngle = gradient(angle)
+    dAngle = np.gradient(angle)
     ax.plot(dAngle, color="r", label=r"$\frac{d^1}{d\theta^1}$")
     ax.set_ylabel(r"$\frac{d^n}{d\theta^n}$ [deg.]")
 
     ax = axs[2]
-    d2Angle = gradient(dAngle)
+    d2Angle = np.gradient(dAngle)
     ax.plot(d2Angle, color="m", label=r"$\frac{d^2}{d\theta^2}$")
 
     ax.autoscale(True, "x", True)
