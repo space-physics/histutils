@@ -42,7 +42,7 @@ def read(infn: str | Path, params: dict[str, T.Any]) -> tuple:
         for j, i in enumerate(finf["frameindrel"]):
             D, rawFrameInd[j] = getDMCframe(fid, i, finf)
             data[j, ...] = D
-    # %% absolute time estimate, software timing (at your peril)
+    # %% absolute time estimate, software timing
     finf["ut1"] = frame2ut1(params.get("startUTC"), params.get("kineticraw"), rawFrameInd)
 
     return data, rawFrameInd, finf
@@ -120,7 +120,6 @@ def whichframes(
     allrawframe = np.arange(first_frame, last_frame + 1, 1, dtype=np.int64)
     logging.info(f"first / last raw frame #'s: {first_frame}  / {last_frame} ")
     # %% absolute time estimate
-    breakpoint()
     ut1_unix_all = frame2ut1(params.get("startUTC"), params.get("kineticsec"), allrawframe)
     # %% setup frame indices
     """
@@ -129,10 +128,8 @@ def whichframes(
     Assignments have to be "int64", not just python "int".
     Windows python 2.7 64-bit on files >2.1GB, the bytes will wrap
     """
-    breakpoint()
-    FrameIndRel = ut12frame(
-        params.get("ut1req"), np.arange(0, nFrame, 1, dtype=np.int64), ut1_unix_all
-    )
+
+    FrameIndRel = ut12frame(params.get("ut1req"), np.arange(0, nFrame, 1, dtype=np.int64), ut1_unix_all)
 
     # NOTE: no ut1req or problems with ut1req, canNOT use else, need to test len() in case index is [0] validly
     if FrameIndRel is None or len(FrameIndRel) == 0:
@@ -156,7 +153,7 @@ def whichframes(
     return FrameIndRel
 
 
-def getDMCframe(f: T.Union[T.BinaryIO, Path], iFrm: int, finf: dict[str, int]) -> tuple:
+def getDMCframe(f: T.BinaryIO | Path, iFrm: int, finf: dict[str, int]) -> tuple:
     """
     read a single image frame
 

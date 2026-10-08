@@ -3,11 +3,6 @@ from datetime import datetime
 import re
 import numpy as np
 
-try:
-    import tifffile
-except ImportError:
-    tifffile = None
-
 from astropy.io import fits
 
 from .rawDMCreader import howbig
@@ -36,10 +31,11 @@ def getNeoParam(
 
     match fn.suffix.lower():
         case ".tiff":
+            import tifffile
             # FIXME didn't the 2011 TIFFs have headers? maybe not.
-            with tifffile.TiffFile(str(fn)) as f:
-                Y, X = f[0].shape
-                cmosinit = {"firstrawind": 1, "lastrawind": len(f)}
+            with tifffile.TiffFile(fn) as f:
+                Y, X = f.pages[0].shape
+                cmosinit = {"firstrawind": 1, "lastrawind": len(f.pages)}
         case ".fits":
             with fits.open(fn, mode="readonly", memmap=False) as f:
                 kineticsec = f[0].header["KCT"]

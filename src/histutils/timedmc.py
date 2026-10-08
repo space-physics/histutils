@@ -10,6 +10,7 @@ Outputs:
 
 from pathlib import Path
 from datetime import datetime
+
 import numpy as np
 
 
@@ -57,7 +58,7 @@ def parse_gprmc(nmea_file: Path | str) -> datetime:
     return dt
 
 
-def frame2ut1(tstart, kineticsec, rawind):
+def frame2ut1(tstart: datetime | None, kineticsec: float | None, rawind):
     """
     if you don't have GPS & fire data, you use this function for a software-only
     estimate of time. This estimate may be off by more than a minute, so think of it
@@ -69,7 +70,26 @@ def frame2ut1(tstart, kineticsec, rawind):
     rawind-1 because camera is one-based indexing
     """
 
+    if tstart is None or kineticsec is None:
+        return None
+
     return datetime2unix(tstart)[0] + (rawind - 1) * kineticsec
+
+
+def nearest1d(xref, xq):
+    """
+    Return indices in xref nearest to each query value in xq.
+    Ties are resolved toward the lower index.
+    """
+
+    xq = np.atleast_1d(xq).astype(float)
+
+    right = np.searchsorted(xref, xq, side="left")
+    right = np.clip(right, 0, xref.size - 1)
+    left = np.maximum(right - 1, 0)
+
+    choose_left = np.abs(xq - xref[left]) <= np.abs(xref[right] - xq)
+    return np.where(choose_left, left, right).astype(np.int64)
 
 
 def ut12frame(treq, ind, ut1_unix):
@@ -77,32 +97,34 @@ def ut12frame(treq, ind, ut1_unix):
     Given treq, output index(ces) to extract via rawDMCreader
     treq: scalar or vector of ut1_unix time (seconds since Jan 1, 1970)
     ind: zero-based frame index corresponding to ut1_unix, corresponding to input data file.
+    Returns None when treq is None, allowing the caller to select frames by index.
     """
-    if treq is None:  # have to do this since interp1 will return last index otherwise
+
+    if treq is None:
         return None
 
     treq = np.atleast_1d(treq)
-    # %% handle human specified string scalar case
-    if treq.size == 1:
-        treq = datetime2unix(treq[0])
-    # %% handle time range case
-    elif treq.size == 2:
-        tstartreq = datetime2unix(treq[0])
-        tendreq = datetime2unix(treq[1])
-        treq = ut1_unix[(ut1_unix > tstartreq) & (ut1_unix < tendreq)]
-    else:  # otherwise, it's a vector of requested values
-        treq = datetime2unix(treq)
-    # %% get indices
-    """
-    We use nearest neighbor interpolation to pick a frame index for each requested time.
-    """
-    framereq = np.rint(np.interp(treq, ut1_unix, ind)).astype(np.int64)
-    framereq = framereq[framereq >= 0]  # discard outside time limits
+    match treq.size:
+        case 1:
+            treq = datetime2unix(treq[0])
+        case 2:
+            # range of requested times
+            i = (ut1_unix >= datetime2unix(treq[0])) & (ut1_unix < datetime2unix(treq[1]))
+            treq = ut1_unix[i]
+        case _:
+            # vector of requested times
+            treq = datetime2unix(treq)
+    # Pick the nearest timestamp with searchsorted and map to its frame index.
+    in_range = (treq >= ut1_unix[0]) & (treq <= ut1_unix[-1])
+    treq = treq[in_range]
+
+    nearest = nearest1d(ut1_unix, treq)
+    framereq = ind[nearest]
 
     return framereq
 
 
-def datetime2unix(T):
+def datetime2unix(T: datetime):
     """
     converts datetime to UT1 unix epoch time
 
@@ -112,10 +134,12 @@ def datetime2unix(T):
     numpy.ndarray of float, shape (N,) where N is the number of input datetimes
         UT1 unix epoch time in seconds since Jan 1, 1970 midnight
     """
-    T = np.atleast_1d(T)
 
-    ut1_unix = np.empty(T.shape, dtype=float)
-    for i, t in enumerate(T):
+    Ta = np.atleast_1d(T)  # type: ignore [call-overload]
+    # datetime isn't part of npt.ArrayLike due to https://github.com/numpy/numpy/pull/31479
+
+    ut1_unix = np.empty(Ta.shape, dtype=float)
+    for i, t in enumerate(Ta):
         match t:
             case datetime():
                 pass
@@ -124,9 +148,9 @@ def datetime2unix(T):
             case str():
                 t = datetime.fromisoformat(t)
             case float():
-                return T
+                return Ta
             case int():
-                return T.astype(float)
+                return Ta.astype(float)
             case _:
                 raise TypeError("Expecting datetime or parsable date string")
 

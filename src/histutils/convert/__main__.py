@@ -66,13 +66,11 @@ def convert_files(p: dict):
             logging.warning(f"\nskipping {outfn} {fn}")
             continue
 
-        logging.info(
-            f"\n file {i + 1} / {N}   {i + 1 / N * 100.0:.1f} % done with {flist[0].parent}"
-        )
+        logging.info(f"\n file {i + 1} / {N}   {i + 1 / N * 100.0:.1f} % done with {flist[0].parent}")
 
-        _, rawind, finf = read(fn, params, outfn)
+        _, rawind, finf = read(fn, params)
         # %% convert
-        vid2h5(None, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params)
+        vid2h5(fn, ut1=finf["ut1"], rawind=rawind, ticks=None, params=params, outfn=outfn)
 
 
 if __name__ == "__main__":
